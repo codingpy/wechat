@@ -105,6 +105,8 @@ def sync(sid, uin, sync_key):
         retcode = m[1]
 
         if retcode == '0':
+            msgs = []
+
             selector = m[2]
 
             if selector != '0':
@@ -124,7 +126,9 @@ def sync(sid, uin, sync_key):
                 for contact in content['DelContactList']:
                     del_contact(contact)
 
-                yield content['AddMsgList']
+                msgs = content['AddMsgList']
+
+            yield msgs
         else:
             logout()
 
