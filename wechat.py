@@ -1,12 +1,23 @@
 import re
+import time
+import json
+import mimetypes
+import math
 import enum
 
 import requests
 import qrcode
 
 
+CHUNK_SIZE = int(0.5 * 1024 * 1024)
+
+
 class MsgType(enum.Enum):
     TEXT = 1
+
+
+class MediaType(enum.Enum):
+    ATTACHMENT = 4
 
 
 def utf_8(r, *args, **kwargs):
@@ -20,6 +31,8 @@ s.hooks['response'] = utf_8
 user = {}
 
 contacts = {}
+
+base_request = {}
 
 
 def login():
@@ -41,6 +54,11 @@ def login():
 
     sid = re.search('<wxsid>(.*)</wxsid>', r.text)[1]
     uin = re.search('<wxuin>(.*)</wxuin>', r.text)[1]
+
+    base_request.update({
+        'Sid': sid,
+        'Uin': int(uin),
+    })
 
     r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit', json={'BaseRequest': {}})
 
@@ -160,3 +178,49 @@ def send(msg, to):
 
     if content['BaseResponse']['Ret'] == 0:
         return content['MsgID']
+
+
+def upload(file, to='filehelper'):
+    client_media_id = time.time_ns()
+
+    ctype, encoding = mimetypes.guess_type(file)
+
+    if ctype is None or encoding is not None:
+        ctype = 'application/octet-stream'
+
+    maintype, subtype = ctype.split('/')
+
+    if maintype == 'image':
+        mediatype = 'pic'
+    elif maintype == 'video':
+        mediatype = 'video'
+    else:
+        mediatype = 'doc'
+
+    with open(file, 'rb') as f:
+        total_len = f.seek(0, 2)
+
+        f.seek(0)
+
+        chunks = math.ceil(total_len / CHUNK_SIZE)
+
+        for chunk in range(chunks):
+            r = s.post('https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia', params={'f': 'json'}, files={'filename': f.read(CHUNK_SIZE)}, data={
+                'chunks': chunks,
+                'chunk': chunk,
+                'mediatype': mediatype,
+                'uploadmediarequest': json.dumps({
+                    'BaseRequest': base_request,
+                    'ClientMediaId': client_media_id,
+                    'TotalLen': total_len,
+                    'StartPos': 0,
+                    'DataLen': total_len,
+                    'MediaType': MediaType.ATTACHMENT.value,
+                    'ToUserName': to,
+                }),
+            })
+
+    content = r.json()
+
+    if content['BaseResponse']['Ret'] == 0:
+        return content['MediaId']
