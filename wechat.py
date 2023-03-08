@@ -14,6 +14,7 @@ CHUNK_SIZE = int(0.5 * 1024 * 1024)
 
 class MsgType(enum.Enum):
     TEXT = 1
+    IMAGE = 3
 
 
 class MediaType(enum.Enum):
@@ -170,6 +171,14 @@ def send(content, to):
         'ToUserName': to,
         'Type': MsgType.TEXT.value,
         'Content': content,
+    })
+
+
+def send_img(media_id, to):
+    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json', {
+        'ToUserName': to,
+        'Type': MsgType.IMAGE.value,
+        'MediaId': media_id,
     })
 
 
