@@ -166,18 +166,27 @@ def logout():
 
 
 def send(content, to):
+    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg', {
+        'ToUserName': to,
+        'Type': MsgType.TEXT.value,
+        'Content': content,
+    })
+
+
+def post(url, msg):
+    client_msg_id = time.time_ns()
+
     payload = {
         'BaseRequest': {},
         'Msg': {
+            'ClientMsgId': client_msg_id,
+            'LocalID': client_msg_id,
             'FromUserName': user['UserName'],
-            'ToUserName': to,
-            'ClientMsgId': time.time_ns(),
-            'Type': MsgType.TEXT.value,
-            'Content': content,
+            **msg,
         },
     }
 
-    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg', data=json.dumps(payload, ensure_ascii=False).encode())
+    r = s.post(url, data=json.dumps(payload, ensure_ascii=False).encode())
 
     content = r.json()
 
