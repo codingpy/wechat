@@ -15,6 +15,7 @@ CHUNK_SIZE = int(0.5 * 1024 * 1024)
 class MsgType(enum.Enum):
     TEXT = 1
     IMAGE = 3
+    EMOTICON = 47
 
 
 class MediaType(enum.Enum):
@@ -182,6 +183,14 @@ def send_img(media_id, to):
     })
 
 
+def send_emoticon(media_id, to):
+    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys', {
+        'ToUserName': to,
+        'Type': MsgType.EMOTICON.value,
+        'MediaId': media_id,
+    })
+
+
 def post(url, msg):
     client_msg_id = time.time_ns()
 
@@ -213,7 +222,7 @@ def upload(file, to='filehelper'):
 
     maintype, subtype = ctype.split('/')
 
-    if maintype == 'image':
+    if maintype == 'image' and subtype != 'gif':
         mediatype = 'pic'
     elif maintype == 'video':
         mediatype = 'video'
