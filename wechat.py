@@ -15,6 +15,7 @@ CHUNK_SIZE = int(0.5 * 1024 * 1024)
 class MsgType(enum.Enum):
     TEXT = 1
     IMAGE = 3
+    VIDEO = 43
     EMOTICON = 47
 
 
@@ -183,6 +184,14 @@ def send_img(media_id, to):
     })
 
 
+def send_video(media_id, to):
+    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json', {
+        'ToUserName': to,
+        'Type': MsgType.VIDEO.value,
+        'MediaId': media_id,
+    })
+
+
 def send_emoticon(media_id, to):
     return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys', {
         'ToUserName': to,
@@ -195,7 +204,7 @@ def post(url, msg):
     client_msg_id = time.time_ns()
 
     payload = {
-        'BaseRequest': {},
+        'BaseRequest': base_request,
         'Msg': {
             'ClientMsgId': client_msg_id,
             'LocalID': client_msg_id,
