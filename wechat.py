@@ -212,6 +212,19 @@ def post(url, msg):
         return content['MsgID']
 
 
+def revoke(svr_msg_id, to):
+    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg', json={
+        'BaseRequest': {},
+        'SvrMsgId': svr_msg_id,
+        'ToUserName': to,
+        'ClientMsgId': time.time_ns(),
+    })
+
+    content = r.json()
+
+    return content['BaseResponse']['Ret']
+
+
 def upload(file, to='filehelper'):
     client_media_id = time.time_ns()
 
