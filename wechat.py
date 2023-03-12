@@ -19,6 +19,10 @@ class MsgType(enum.Enum):
     EMOTICON = 47
 
 
+class AppMsgType(enum.Enum):
+    ATTACH = 6
+
+
 class MediaType(enum.Enum):
     ATTACHMENT = 4
 
@@ -189,6 +193,23 @@ def send_video(media_id, to):
         'ToUserName': to,
         'Type': MsgType.VIDEO.value,
         'MediaId': media_id,
+    })
+
+
+def send_app(title, total_len, attach_id, to):
+    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg', {
+        'ToUserName': to,
+        'Type': AppMsgType.ATTACH.value,
+        'Content': (
+            f'<appmsg>'
+            f'  <title>{title}</title>'
+            f'  <type>{AppMsgType.ATTACH.value}</type>'
+            f'  <appattach>'
+            f'    <totallen>{total_len}</totallen>'
+            f'    <attachid>{attach_id}</attachid>'
+            f'  </appattach>'
+            f'</appmsg>'
+        ),
     })
 
 
