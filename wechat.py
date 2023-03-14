@@ -49,15 +49,12 @@ def login():
 
     print_qr('https://login.weixin.qq.com/l/' + uuid)
 
-    while True:
-        r = s.get('https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login', params={'uuid': uuid})
+    redirect_uri = check_login(uuid)
 
-        m = re.search('window.redirect_uri="(.*)"', r.text)
+    if not redirect_uri:
+        return
 
-        if m:
-            break
-
-    r = s.get(m[1], allow_redirects=False)
+    r = s.get(redirect_uri, allow_redirects=False)
 
     sid = re.search('<wxsid>(.*)</wxsid>', r.text)[1]
     uin = re.search('<wxuin>(.*)</wxuin>', r.text)[1]
@@ -111,6 +108,19 @@ def print_qr(data):
     qr.add_data(data)
 
     qr.print_ascii()
+
+
+def check_login(uuid):
+    while True:
+        r = s.get('https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login', params={'uuid': uuid})
+
+        code = re.search('window.code=(\d+)', r.text)[1]
+
+        if code == '200':
+            return re.search('window.redirect_uri="(.*)"', r.text)[1]
+
+        if code == '400':
+            return
 
 
 def sync(sid, uin, sync_key):
