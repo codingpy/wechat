@@ -127,13 +127,16 @@ def sync(sid, uin, sync_key):
     sync_check_key = sync_key
 
     while True:
-        r = s.get('https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck', params={
-            'sid': sid,
-            'uin': uin,
-            'synckey': '|'.join(
-                f'{x["Key"]}_{x["Val"]}' for x in sync_check_key['List']
-            ),
-        })
+        try:
+            r = s.get('https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck', params={
+                'sid': sid,
+                'uin': uin,
+                'synckey': '|'.join(
+                    f'{x["Key"]}_{x["Val"]}' for x in sync_check_key['List']
+                ),
+            })
+        except requests.ConnectionError:
+            pass
 
         m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
 
