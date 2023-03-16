@@ -64,6 +64,29 @@ def login():
         'Uin': int(uin),
     })
 
+
+def print_qr(data):
+    qr = qrcode.QRCode()
+
+    qr.add_data(data)
+
+    qr.print_ascii()
+
+
+def check_login(uuid):
+    while True:
+        r = s.get('https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login', params={'uuid': uuid})
+
+        code = re.search('window.code=(\d+)', r.text)[1]
+
+        if code == '200':
+            return re.search('window.redirect_uri="(.*)"', r.text)[1]
+
+        if code == '400':
+            return
+
+
+def init():
     r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit', json={'BaseRequest': {}})
 
     content = r.json()
@@ -99,38 +122,17 @@ def login():
     for contact in content['MemberList']:
         add_contact(contact)
 
-    return sync(sid, uin, sync_key)
+    return sync(sync_key)
 
 
-def print_qr(data):
-    qr = qrcode.QRCode()
-
-    qr.add_data(data)
-
-    qr.print_ascii()
-
-
-def check_login(uuid):
-    while True:
-        r = s.get('https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login', params={'uuid': uuid})
-
-        code = re.search('window.code=(\d+)', r.text)[1]
-
-        if code == '200':
-            return re.search('window.redirect_uri="(.*)"', r.text)[1]
-
-        if code == '400':
-            return
-
-
-def sync(sid, uin, sync_key):
+def sync(sync_key):
     sync_check_key = sync_key
 
     while True:
         try:
             r = s.get('https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck', params={
-                'sid': sid,
-                'uin': uin,
+                'sid': base_request['Sid'],
+                'uin': base_request['Uin'],
                 'synckey': '|'.join(
                     f'{x["Key"]}_{x["Val"]}' for x in sync_check_key['List']
                 ),
