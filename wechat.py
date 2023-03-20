@@ -314,3 +314,15 @@ def upload(file, to='filehelper'):
 
     if content['BaseResponse']['Ret'] == 0:
         return content['MediaId']
+
+
+def get_img(msg_id, out):
+    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=' + msg_id, out)
+
+
+def download(url, out):
+    r = s.get(url, stream=True)
+
+    with open(out, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=128):
+            f.write(chunk)
