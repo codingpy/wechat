@@ -137,42 +137,42 @@ def sync(sync_key):
                     f'{x["Key"]}_{x["Val"]}' for x in sync_check_key['List']
                 ),
             })
+
+            m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
+
+            retcode = m[1]
+
+            if retcode == '0':
+                msgs = []
+
+                selector = m[2]
+
+                if selector != '0':
+                    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync', json={
+                        'BaseRequest': {},
+                        'SyncKey': sync_key,
+                    })
+
+                    content = r.json()
+
+                    sync_check_key = content['SyncCheckKey']
+                    sync_key = content['SyncKey']
+
+                    for contact in content['ModContactList']:
+                        add_contact(contact)
+
+                    for contact in content['DelContactList']:
+                        del_contact(contact)
+
+                    msgs = content['AddMsgList']
+
+                yield msgs
+            else:
+                logout()
+
+                return
         except requests.ConnectionError:
             pass
-
-        m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
-
-        retcode = m[1]
-
-        if retcode == '0':
-            msgs = []
-
-            selector = m[2]
-
-            if selector != '0':
-                r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync', json={
-                    'BaseRequest': {},
-                    'SyncKey': sync_key,
-                })
-
-                content = r.json()
-
-                sync_check_key = content['SyncCheckKey']
-                sync_key = content['SyncKey']
-
-                for contact in content['ModContactList']:
-                    add_contact(contact)
-
-                for contact in content['DelContactList']:
-                    del_contact(contact)
-
-                msgs = content['AddMsgList']
-
-            yield msgs
-        else:
-            logout()
-
-            return
 
 
 def add_contact(contact):
