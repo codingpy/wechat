@@ -2,6 +2,7 @@ import re
 import time
 import json
 import mimetypes
+import os
 import math
 import enum
 
@@ -288,7 +289,7 @@ def upload(file, to='filehelper'):
         mediatype = 'doc'
 
     with open(file, 'rb') as f:
-        total_len = f.seek(0, 2)
+        total_len = f.seek(0, os.SEEK_END)
 
         f.seek(0)
 
@@ -322,6 +323,12 @@ def get_img(msg_id, out):
 
 def get_video(msg_id, out):
     download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=' + msg_id, out, headers={'Range': 'bytes=0-'})
+
+
+def get_media(media_id, out):
+    filename = os.path.basename(out)
+
+    download('https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid=' + media_id + '&encryfilename=' + filename, out)
 
 
 def download(url, out, **kwargs):
