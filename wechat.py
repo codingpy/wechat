@@ -320,8 +320,12 @@ def get_img(msg_id, out):
     download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=' + msg_id, out)
 
 
-def download(url, out):
-    r = s.get(url, stream=True)
+def get_video(msg_id, out):
+    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=' + msg_id, out, headers={'Range': 'bytes=0-'})
+
+
+def download(url, out, **kwargs):
+    r = s.get(url, stream=True, **kwargs)
 
     with open(out, 'wb') as f:
         for chunk in r.iter_content(chunk_size=128):
