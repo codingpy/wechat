@@ -16,6 +16,7 @@ CHUNK_SIZE = int(0.5 * 1024 * 1024)
 class MsgType(enum.Enum):
     TEXT = 1
     IMAGE = 3
+    VOICE = 34
     VIDEO = 43
     EMOTICON = 47
 
@@ -319,6 +320,10 @@ def upload(file, to='filehelper'):
 
 def get_img(msg_id, out):
     download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=' + msg_id, out)
+
+
+def get_voice(msg_id, out):
+    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=' + msg_id, out)
 
 
 def get_video(msg_id, out):
