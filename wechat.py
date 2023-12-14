@@ -1,14 +1,13 @@
-import re
-import time
+import enum
 import json
+import math
 import mimetypes
 import os
-import math
-import enum
+import re
+import time
 
-import requests
 import qrcode
-
+import requests
 
 CHUNK_SIZE = int(0.5 * 1024 * 1024)
 
@@ -30,12 +29,12 @@ class MediaType(enum.Enum):
 
 
 def utf_8(r, *args, **kwargs):
-    r.encoding = 'utf-8'
+    r.encoding = "utf-8"
 
 
 s = requests.Session()
 
-s.hooks['response'] = utf_8
+s.hooks["response"] = utf_8
 
 user = {}
 
@@ -45,11 +44,11 @@ base_request = {}
 
 
 def login():
-    r = s.get('https://login.wx.qq.com/jslogin', params={'appid': 'wx782c26e4c19acffb'})
+    r = s.get("https://login.wx.qq.com/jslogin", params={"appid": "wx782c26e4c19acffb"})
 
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
-    print_qr('https://login.weixin.qq.com/l/' + uuid)
+    print_qr("https://login.weixin.qq.com/l/" + uuid)
 
     redirect_uri = check_login(uuid)
 
@@ -58,13 +57,10 @@ def login():
 
     r = s.get(redirect_uri, allow_redirects=False)
 
-    sid = re.search('<wxsid>(.*)</wxsid>', r.text)[1]
-    uin = re.search('<wxuin>(.*)</wxuin>', r.text)[1]
+    sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
+    uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
 
-    base_request.update({
-        'Sid': sid,
-        'Uin': int(uin),
-    })
+    base_request.update({"Sid": sid, "Uin": int(uin)})
 
 
 def print_qr(data):
@@ -77,51 +73,52 @@ def print_qr(data):
 
 def check_login(uuid):
     while True:
-        r = s.get('https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login', params={'uuid': uuid})
+        r = s.get(
+            "https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login", params={"uuid": uuid}
+        )
 
-        code = re.search('window.code=(\d+)', r.text)[1]
+        code = re.search("window.code=(\d+)", r.text)[1]
 
-        if code == '200':
+        if code == "200":
             return re.search('window.redirect_uri="(.*)"', r.text)[1]
 
-        if code == '400':
+        if code == "400":
             return
 
 
 def init():
-    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit', json={'BaseRequest': {}})
+    r = s.post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit", json={"BaseRequest": {}}
+    )
 
     content = r.json()
 
-    sync_key = content['SyncKey']
+    sync_key = content["SyncKey"]
 
-    user.update(
-        content['User']
-    )
+    user.update(content["User"])
 
     add_contact(user)
 
-    for contact in content['ContactList']:
+    for contact in content["ContactList"]:
         add_contact(contact)
 
-    chats = [{'UserName': user_name} for user_name in content['ChatSet'].split(',')]
+    chats = [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
 
-    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact', json={
-        'BaseRequest': {},
-        'Count': len(chats),
-        'List': chats,
-    })
+    r = s.post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
+        json={"BaseRequest": {}, "Count": len(chats), "List": chats},
+    )
 
     content = r.json()
 
-    for contact in content['ContactList']:
+    for contact in content["ContactList"]:
         add_contact(contact)
 
-    r = s.get('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact')
+    r = s.get("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact")
 
     content = r.json()
 
-    for contact in content['MemberList']:
+    for contact in content["MemberList"]:
         add_contact(contact)
 
     return sync(sync_key)
@@ -132,41 +129,44 @@ def sync(sync_key):
 
     while True:
         try:
-            r = s.get('https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck', params={
-                'sid': base_request['Sid'],
-                'uin': base_request['Uin'],
-                'synckey': '|'.join(
-                    f'{x["Key"]}_{x["Val"]}' for x in sync_check_key['List']
-                ),
-            })
+            r = s.get(
+                "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck",
+                params={
+                    "sid": base_request["Sid"],
+                    "uin": base_request["Uin"],
+                    "synckey": "|".join(
+                        f'{x["Key"]}_{x["Val"]}' for x in sync_check_key["List"]
+                    ),
+                },
+            )
 
             m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
 
             retcode = m[1]
 
-            if retcode == '0':
+            if retcode == "0":
                 msgs = []
 
                 selector = m[2]
 
-                if selector != '0':
-                    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync', json={
-                        'BaseRequest': {},
-                        'SyncKey': sync_key,
-                    })
+                if selector != "0":
+                    r = s.post(
+                        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync",
+                        json={"BaseRequest": {}, "SyncKey": sync_key},
+                    )
 
                     content = r.json()
 
-                    sync_check_key = content['SyncCheckKey']
-                    sync_key = content['SyncKey']
+                    sync_check_key = content["SyncCheckKey"]
+                    sync_key = content["SyncKey"]
 
-                    for contact in content['ModContactList']:
+                    for contact in content["ModContactList"]:
                         add_contact(contact)
 
-                    for contact in content['DelContactList']:
+                    for contact in content["DelContactList"]:
                         del_contact(contact)
 
-                    msgs = content['AddMsgList']
+                    msgs = content["AddMsgList"]
 
                 yield msgs
             else:
@@ -178,75 +178,74 @@ def sync(sync_key):
 
 
 def add_contact(contact):
-    contacts[contact['UserName']] = contact
+    contacts[contact["UserName"]] = contact
 
 
 def del_contact(contact):
-    del contacts[contact['UserName']]
+    del contacts[contact["UserName"]]
 
 
 def logout():
-    s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout')
+    s.post("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout")
 
 
 def send(content, to):
-    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg', {
-        'ToUserName': to,
-        'Type': MsgType.TEXT.value,
-        'Content': content,
-    })
+    return post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg",
+        {"ToUserName": to, "Type": MsgType.TEXT.value, "Content": content},
+    )
 
 
 def send_img(media_id, to):
-    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json', {
-        'ToUserName': to,
-        'Type': MsgType.IMAGE.value,
-        'MediaId': media_id,
-    })
+    return post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
+        {"ToUserName": to, "Type": MsgType.IMAGE.value, "MediaId": media_id},
+    )
 
 
 def send_video(media_id, to):
-    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json', {
-        'ToUserName': to,
-        'Type': MsgType.VIDEO.value,
-        'MediaId': media_id,
-    })
+    return post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
+        {"ToUserName": to, "Type": MsgType.VIDEO.value, "MediaId": media_id},
+    )
 
 
 def send_app(title, total_len, attach_id, to):
-    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg', {
-        'ToUserName': to,
-        'Type': AppMsgType.ATTACH.value,
-        'Content': (
-            f'<appmsg>'
-            f'  <title>{title}</title>'
-            f'  <type>{AppMsgType.ATTACH.value}</type>'
-            f'  <appattach>'
-            f'    <totallen>{total_len}</totallen>'
-            f'    <attachid>{attach_id}</attachid>'
-            f'  </appattach>'
-            f'</appmsg>'
-        ),
-    })
+    return post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg",
+        {
+            "ToUserName": to,
+            "Type": AppMsgType.ATTACH.value,
+            "Content": (
+                f"<appmsg>"
+                f"  <title>{title}</title>"
+                f"  <type>{AppMsgType.ATTACH.value}</type>"
+                f"  <appattach>"
+                f"    <totallen>{total_len}</totallen>"
+                f"    <attachid>{attach_id}</attachid>"
+                f"  </appattach>"
+                f"</appmsg>"
+            ),
+        },
+    )
 
 
 def send_emoticon(media_id, to):
-    return post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys', {
-        'ToUserName': to,
-        'Type': MsgType.EMOTICON.value,
-        'MediaId': media_id,
-    })
+    return post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
+        {"ToUserName": to, "Type": MsgType.EMOTICON.value, "MediaId": media_id},
+    )
 
 
 def post(url, msg):
     client_msg_id = time.time_ns()
 
     payload = {
-        'BaseRequest': base_request,
-        'Msg': {
-            'ClientMsgId': client_msg_id,
-            'LocalID': client_msg_id,
-            'FromUserName': user['UserName'],
+        "BaseRequest": base_request,
+        "Msg": {
+            "ClientMsgId": client_msg_id,
+            "LocalID": client_msg_id,
+            "FromUserName": user["UserName"],
             **msg,
         },
     }
@@ -255,41 +254,44 @@ def post(url, msg):
 
     content = r.json()
 
-    if content['BaseResponse']['Ret'] == 0:
-        return content['MsgID']
+    if content["BaseResponse"]["Ret"] == 0:
+        return content["MsgID"]
 
 
 def revoke(svr_msg_id, to):
-    r = s.post('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg', json={
-        'BaseRequest': {},
-        'SvrMsgId': svr_msg_id,
-        'ToUserName': to,
-        'ClientMsgId': time.time_ns(),
-    })
+    r = s.post(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg",
+        json={
+            "BaseRequest": {},
+            "SvrMsgId": svr_msg_id,
+            "ToUserName": to,
+            "ClientMsgId": time.time_ns(),
+        },
+    )
 
     content = r.json()
 
-    return content['BaseResponse']['Ret']
+    return content["BaseResponse"]["Ret"]
 
 
-def upload(file, to='filehelper'):
+def upload(file, to="filehelper"):
     client_media_id = time.time_ns()
 
     ctype, encoding = mimetypes.guess_type(file)
 
     if ctype is None or encoding is not None:
-        ctype = 'application/octet-stream'
+        ctype = "application/octet-stream"
 
-    maintype, subtype = ctype.split('/')
+    maintype, subtype = ctype.split("/")
 
-    if maintype == 'image' and subtype != 'gif':
-        mediatype = 'pic'
-    elif maintype == 'video':
-        mediatype = 'video'
+    if maintype == "image" and subtype != "gif":
+        mediatype = "pic"
+    elif maintype == "video":
+        mediatype = "video"
     else:
-        mediatype = 'doc'
+        mediatype = "doc"
 
-    with open(file, 'rb') as f:
+    with open(file, "rb") as f:
         total_len = f.seek(0, os.SEEK_END)
 
         f.seek(0)
@@ -297,48 +299,69 @@ def upload(file, to='filehelper'):
         chunks = math.ceil(total_len / CHUNK_SIZE)
 
         for chunk in range(chunks):
-            r = s.post('https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia', params={'f': 'json'}, files={'filename': f.read(CHUNK_SIZE)}, data={
-                'chunks': chunks,
-                'chunk': chunk,
-                'mediatype': mediatype,
-                'uploadmediarequest': json.dumps({
-                    'BaseRequest': base_request,
-                    'ClientMediaId': client_media_id,
-                    'TotalLen': total_len,
-                    'StartPos': 0,
-                    'DataLen': total_len,
-                    'MediaType': MediaType.ATTACHMENT.value,
-                    'ToUserName': to,
-                }),
-            })
+            r = s.post(
+                "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia",
+                params={"f": "json"},
+                files={"filename": f.read(CHUNK_SIZE)},
+                data={
+                    "chunks": chunks,
+                    "chunk": chunk,
+                    "mediatype": mediatype,
+                    "uploadmediarequest": json.dumps(
+                        {
+                            "BaseRequest": base_request,
+                            "ClientMediaId": client_media_id,
+                            "TotalLen": total_len,
+                            "StartPos": 0,
+                            "DataLen": total_len,
+                            "MediaType": MediaType.ATTACHMENT.value,
+                            "ToUserName": to,
+                        }
+                    ),
+                },
+            )
 
     content = r.json()
 
-    if content['BaseResponse']['Ret'] == 0:
-        return content['MediaId']
+    if content["BaseResponse"]["Ret"] == 0:
+        return content["MediaId"]
 
 
 def get_img(msg_id, out):
-    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=' + msg_id, out)
+    download(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=" + msg_id, out
+    )
 
 
 def get_voice(msg_id, out):
-    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=' + msg_id, out)
+    download(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=" + msg_id, out
+    )
 
 
 def get_video(msg_id, out):
-    download('https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=' + msg_id, out, headers={'Range': 'bytes=0-'})
+    download(
+        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=" + msg_id,
+        out,
+        headers={"Range": "bytes=0-"},
+    )
 
 
 def get_media(media_id, out):
     filename = os.path.basename(out)
 
-    download('https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid=' + media_id + '&encryfilename=' + filename, out)
+    download(
+        "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid="
+        + media_id
+        + "&encryfilename="
+        + filename,
+        out,
+    )
 
 
 def download(url, out, **kwargs):
     r = s.get(url, stream=True, **kwargs)
 
-    with open(out, 'wb') as f:
+    with open(out, "wb") as f:
         for chunk in r.iter_content(chunk_size=128):
             f.write(chunk)
