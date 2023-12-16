@@ -37,9 +37,7 @@ s = requests.Session()
 s.hooks["response"] = utf_8
 
 user = {}
-
 contacts = {}
-
 base_request = {}
 
 
@@ -52,22 +50,18 @@ def login():
 
     redirect_uri = check_login(uuid)
 
-    if not redirect_uri:
-        return
+    if redirect_uri:
+        r = s.get(redirect_uri, allow_redirects=False)
 
-    r = s.get(redirect_uri, allow_redirects=False)
+        sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
+        uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
 
-    sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
-    uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
-
-    base_request.update({"Sid": sid, "Uin": int(uin)})
+        base_request.update({"Sid": sid, "Uin": int(uin)})
 
 
 def print_qr(data):
     qr = qrcode.QRCode()
-
     qr.add_data(data)
-
     qr.print_ascii()
 
 
@@ -88,7 +82,6 @@ def init():
     r = s.post(
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit", json={"BaseRequest": {}}
     )
-
     content = r.json()
 
     sync_key = content["SyncKey"]
@@ -106,14 +99,12 @@ def init():
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
         json={"BaseRequest": {}, "Count": len(chats), "List": chats},
     )
-
     content = r.json()
 
     for contact in content["ContactList"]:
         add_contact(contact)
 
     r = s.get("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact")
-
     content = r.json()
 
     for contact in content["MemberList"]:
@@ -127,6 +118,8 @@ def sync(sync_key):
 
     while True:
         try:
+            msgs = []
+
             r = s.get(
                 "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck",
                 params={
@@ -140,37 +133,29 @@ def sync(sync_key):
 
             m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
 
-            retcode = m[1]
-
-            if retcode == "0":
-                msgs = []
-
-                selector = m[2]
-
-                if selector != "0":
-                    r = s.post(
-                        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync",
-                        json={"BaseRequest": {}, "SyncKey": sync_key},
-                    )
-
-                    content = r.json()
-
-                    sync_check_key = content["SyncCheckKey"]
-                    sync_key = content["SyncKey"]
-
-                    for contact in content["ModContactList"]:
-                        add_contact(contact)
-
-                    for contact in content["DelContactList"]:
-                        del_contact(contact)
-
-                    msgs = content["AddMsgList"]
-
-                yield msgs
-            else:
+            if m[1] != "0":
                 logout()
-
                 return
+
+            if m[2] != "0":
+                r = s.post(
+                    "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync",
+                    json={"BaseRequest": {}, "SyncKey": sync_key},
+                )
+                content = r.json()
+
+                sync_check_key = content["SyncCheckKey"]
+                sync_key = content["SyncKey"]
+
+                for contact in content["ModContactList"]:
+                    add_contact(contact)
+
+                for contact in content["DelContactList"]:
+                    del_contact(contact)
+
+                msgs = content["AddMsgList"]
+
+            yield msgs
         except requests.ConnectionError:
             pass
 
@@ -249,7 +234,6 @@ def post(url, msg):
     }
 
     r = s.post(url, data=json.dumps(payload, ensure_ascii=False).encode())
-
     content = r.json()
 
     if content["BaseResponse"]["Ret"] == 0:
@@ -266,7 +250,6 @@ def revoke(svr_msg_id, to):
             "ClientMsgId": time.time_ns(),
         },
     )
-
     content = r.json()
 
     return content["BaseResponse"]["Ret"]
