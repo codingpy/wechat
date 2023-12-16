@@ -9,8 +9,6 @@ import time
 import qrcode
 import requests
 
-CHUNK_SIZE = int(0.5 * 1024 * 1024)
-
 
 class MsgType(enum.Enum):
     TEXT = 1
@@ -266,27 +264,29 @@ def upload(file, to="filehelper"):
     maintype, subtype = ctype.split("/")
 
     if maintype == "image" and subtype != "gif":
-        mediatype = "pic"
+        media_type = "pic"
     elif maintype == "video":
-        mediatype = "video"
+        media_type = "video"
     else:
-        mediatype = "doc"
+        media_type = "doc"
 
     with open(file, "rb") as f:
         total_len = f.seek(0, os.SEEK_END)
 
         f.seek(0)
 
-        chunks = math.ceil(total_len / CHUNK_SIZE)
+        chunk_size = int(0.5 * 1024 * 1024)
+
+        chunks = math.ceil(total_len / chunk_size)
 
         for chunk in range(chunks):
             r = s.post(
                 "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json",
-                files={"filename": f.read(CHUNK_SIZE)},
+                files={"filename": f.read(chunk_size)},
                 data={
                     "chunks": chunks,
                     "chunk": chunk,
-                    "mediatype": mediatype,
+                    "mediatype": media_type,
                     "uploadmediarequest": json.dumps(
                         {
                             "BaseRequest": base_request,
