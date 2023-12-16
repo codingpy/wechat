@@ -44,11 +44,11 @@ base_request = {}
 
 
 def login():
-    r = s.get("https://login.wx.qq.com/jslogin", params={"appid": "wx782c26e4c19acffb"})
+    r = s.get("https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb")
 
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
-    print_qr("https://login.weixin.qq.com/l/" + uuid)
+    print_qr(f"https://login.weixin.qq.com/l/{uuid}")
 
     redirect_uri = check_login(uuid)
 
@@ -73,9 +73,7 @@ def print_qr(data):
 
 def check_login(uuid):
     while True:
-        r = s.get(
-            "https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login", params={"uuid": uuid}
-        )
+        r = s.get(f"https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}")
 
         code = re.search("window.code=(\d+)", r.text)[1]
 
@@ -300,8 +298,7 @@ def upload(file, to="filehelper"):
 
         for chunk in range(chunks):
             r = s.post(
-                "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia",
-                params={"f": "json"},
+                "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json",
                 files={"filename": f.read(CHUNK_SIZE)},
                 data={
                     "chunks": chunks,
@@ -329,19 +326,19 @@ def upload(file, to="filehelper"):
 
 def get_img(msg_id, out):
     download(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=" + msg_id, out
+        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID={msg_id}", out
     )
 
 
 def get_voice(msg_id, out):
     download(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=" + msg_id, out
+        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid={msg_id}", out
     )
 
 
 def get_video(msg_id, out):
     download(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=" + msg_id,
+        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid={msg_id}",
         out,
         headers={"Range": "bytes=0-"},
     )
@@ -351,10 +348,7 @@ def get_media(media_id, out):
     filename = os.path.basename(out)
 
     download(
-        "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid="
-        + media_id
-        + "&encryfilename="
-        + filename,
+        f"https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid={media_id}&encryfilename={filename}",
         out,
     )
 
