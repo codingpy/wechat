@@ -124,7 +124,7 @@ def sync(sync_key):
                     "sid": base_request["Sid"],
                     "uin": base_request["Uin"],
                     "synckey": "|".join(
-                        f'{x["Key"]}_{x["Val"]}' for x in sync_check_key["List"]
+                        f"{x['Key']}_{x['Val']}" for x in sync_check_key["List"]
                     ),
                 },
             )
