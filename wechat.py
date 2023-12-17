@@ -272,7 +272,6 @@ def upload(file, to="filehelper"):
 
     with open(file, "rb") as f:
         total_len = f.seek(0, os.SEEK_END)
-
         f.seek(0)
 
         chunk_size = int(0.5 * 1024 * 1024)
