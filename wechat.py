@@ -1,16 +1,16 @@
-import enum
 import json
 import math
 import mimetypes
 import os
 import re
 import time
+from enum import IntEnum
 
 import qrcode
 import requests
 
 
-class MsgType(enum.Enum):
+class MsgType(IntEnum):
     TEXT = 1
     IMAGE = 3
     VOICE = 34
@@ -18,11 +18,11 @@ class MsgType(enum.Enum):
     EMOTICON = 47
 
 
-class AppMsgType(enum.Enum):
+class AppMsgType(IntEnum):
     ATTACH = 6
 
 
-class MediaType(enum.Enum):
+class MediaType(IntEnum):
     ATTACHMENT = 4
 
 
@@ -173,21 +173,21 @@ def logout():
 def send(content, to):
     return post(
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg",
-        {"ToUserName": to, "Type": MsgType.TEXT.value, "Content": content},
+        {"ToUserName": to, "Type": MsgType.TEXT, "Content": content},
     )
 
 
 def send_img(media_id, to):
     return post(
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
-        {"ToUserName": to, "Type": MsgType.IMAGE.value, "MediaId": media_id},
+        {"ToUserName": to, "Type": MsgType.IMAGE, "MediaId": media_id},
     )
 
 
 def send_video(media_id, to):
     return post(
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
-        {"ToUserName": to, "Type": MsgType.VIDEO.value, "MediaId": media_id},
+        {"ToUserName": to, "Type": MsgType.VIDEO, "MediaId": media_id},
     )
 
 
@@ -196,11 +196,11 @@ def send_app(title, total_len, attach_id, to):
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg",
         {
             "ToUserName": to,
-            "Type": AppMsgType.ATTACH.value,
+            "Type": AppMsgType.ATTACH,
             "Content": (
                 f"<appmsg>"
                 f"  <title>{title}</title>"
-                f"  <type>{AppMsgType.ATTACH.value}</type>"
+                f"  <type>{AppMsgType.ATTACH}</type>"
                 f"  <appattach>"
                 f"    <totallen>{total_len}</totallen>"
                 f"    <attachid>{attach_id}</attachid>"
@@ -214,7 +214,7 @@ def send_app(title, total_len, attach_id, to):
 def send_emoticon(media_id, to):
     return post(
         "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
-        {"ToUserName": to, "Type": MsgType.EMOTICON.value, "MediaId": media_id},
+        {"ToUserName": to, "Type": MsgType.EMOTICON, "MediaId": media_id},
     )
 
 
@@ -294,7 +294,7 @@ def upload(file, to="filehelper"):
                             "TotalLen": total_len,
                             "StartPos": 0,
                             "DataLen": total_len,
-                            "MediaType": MediaType.ATTACHMENT.value,
+                            "MediaType": MediaType.ATTACHMENT,
                             "ToUserName": to,
                         }
                     ),
