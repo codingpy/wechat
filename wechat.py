@@ -8,6 +8,7 @@ from enum import IntEnum
 
 import qrcode
 import requests
+from requests_toolbelt import sessions
 
 
 class MsgType(IntEnum):
@@ -30,7 +31,7 @@ def utf_8(r, *args, **kwargs):
     r.encoding = "utf-8"
 
 
-s = requests.Session()
+s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
 s.hooks["response"] = utf_8
 
@@ -77,9 +78,7 @@ def check_login(uuid):
 
 
 def init():
-    r = s.post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit", json={"BaseRequest": {}}
-    )
+    r = s.post("/cgi-bin/mmwebwx-bin/webwxinit", json={"BaseRequest": {}})
     content = r.json()
 
     sync_key = content["SyncKey"]
@@ -94,7 +93,7 @@ def init():
     chats = [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
 
     r = s.post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
+        "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
         json={"BaseRequest": {}, "Count": len(chats), "List": chats},
     )
     content = r.json()
@@ -102,7 +101,7 @@ def init():
     for contact in content["ContactList"]:
         add_contact(contact)
 
-    r = s.get("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact")
+    r = s.get("/cgi-bin/mmwebwx-bin/webwxgetcontact")
     content = r.json()
 
     for contact in content["MemberList"]:
@@ -137,7 +136,7 @@ def sync(sync_key):
 
             if m[2] != "0":
                 r = s.post(
-                    "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync",
+                    "/cgi-bin/mmwebwx-bin/webwxsync",
                     json={"BaseRequest": {}, "SyncKey": sync_key},
                 )
                 content = r.json()
@@ -167,33 +166,33 @@ def del_contact(contact):
 
 
 def logout():
-    s.post("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout")
+    s.post("/cgi-bin/mmwebwx-bin/webwxlogout")
 
 
 def send(content, to):
     return post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg",
+        "/cgi-bin/mmwebwx-bin/webwxsendmsg",
         {"ToUserName": to, "Type": MsgType.TEXT, "Content": content},
     )
 
 
 def send_img(media_id, to):
     return post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
+        "/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
         {"ToUserName": to, "Type": MsgType.IMAGE, "MediaId": media_id},
     )
 
 
 def send_video(media_id, to):
     return post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
+        "/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
         {"ToUserName": to, "Type": MsgType.VIDEO, "MediaId": media_id},
     )
 
 
 def send_app(title, total_len, attach_id, to):
     return post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg",
+        "/cgi-bin/mmwebwx-bin/webwxsendappmsg",
         {
             "ToUserName": to,
             "Type": AppMsgType.ATTACH,
@@ -213,7 +212,7 @@ def send_app(title, total_len, attach_id, to):
 
 def send_emoticon(media_id, to):
     return post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
+        "/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
         {"ToUserName": to, "Type": MsgType.EMOTICON, "MediaId": media_id},
     )
 
@@ -240,7 +239,7 @@ def post(url, msg):
 
 def revoke(svr_msg_id, to):
     r = s.post(
-        "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxrevokemsg",
+        "/cgi-bin/mmwebwx-bin/webwxrevokemsg",
         json={
             "BaseRequest": {},
             "SvrMsgId": svr_msg_id,
@@ -307,20 +306,16 @@ def upload(file, to="filehelper"):
 
 
 def get_img(msg_id, out):
-    download(
-        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID={msg_id}", out
-    )
+    download(f"/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID={msg_id}", out)
 
 
 def get_voice(msg_id, out):
-    download(
-        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid={msg_id}", out
-    )
+    download(f"/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid={msg_id}", out)
 
 
 def get_video(msg_id, out):
     download(
-        f"https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid={msg_id}",
+        f"/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid={msg_id}",
         out,
         headers={"Range": "bytes=0-"},
     )
