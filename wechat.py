@@ -9,6 +9,7 @@ from enum import IntEnum
 import qrcode
 import requests
 from requests_toolbelt import sessions
+from requests_toolbelt.downloadutils import stream
 
 
 class MsgType(IntEnum):
@@ -305,34 +306,32 @@ def upload(file, to="filehelper"):
         return content["MediaId"]
 
 
-def get_img(msg_id, out):
-    download(f"/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID={msg_id}", out)
+def get_img(msg_id, path):
+    download(f"/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID={msg_id}", path)
 
 
-def get_voice(msg_id, out):
-    download(f"/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid={msg_id}", out)
+def get_voice(msg_id, path):
+    download(f"/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid={msg_id}", path)
 
 
-def get_video(msg_id, out):
+def get_video(msg_id, path):
     download(
         f"/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid={msg_id}",
-        out,
+        path,
         headers={"Range": "bytes=0-"},
     )
 
 
-def get_media(media_id, out):
-    filename = os.path.basename(out)
+def get_media(media_id, path):
+    filename = os.path.basename(path)
 
     download(
         f"https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid={media_id}&encryfilename={filename}",
-        out,
+        path,
     )
 
 
-def download(url, out, **kwargs):
+def download(url, path=None, **kwargs):
     r = s.get(url, stream=True, **kwargs)
 
-    with open(out, "wb") as f:
-        for chunk in r.iter_content(chunk_size=128):
-            f.write(chunk)
+    return stream.stream_response_to_file(r, path)
