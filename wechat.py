@@ -253,16 +253,20 @@ def revoke(svr_msg_id, to):
     return content["BaseResponse"]["Ret"]
 
 
-def upload(file, to="filehelper"):
+def upload(path, to):
     client_media_id = time.time_ns()
 
-    ctype, encoding = mimetypes.guess_type(file)
+    chunk_size = int(0.5 * 1024 * 1024)
 
+    filename = os.path.basename(path)
+
+    ctype, encoding = mimetypes.guess_type(path)
     if ctype is None or encoding is not None:
+        # No guess could be made, or the file is encoded (compressed), so
+        # use a generic bag-of-bits type.
         ctype = "application/octet-stream"
 
     maintype, subtype = ctype.split("/")
-
     if maintype == "image" and subtype != "gif":
         media_type = "pic"
     elif maintype == "video":
@@ -270,33 +274,33 @@ def upload(file, to="filehelper"):
     else:
         media_type = "doc"
 
-    with open(file, "rb") as f:
+    with open(path, "rb") as f:
         total_len = f.seek(0, os.SEEK_END)
         f.seek(0)
 
-        chunk_size = int(0.5 * 1024 * 1024)
+        upload_media_request = json.dumps(
+            {
+                "BaseRequest": base_request,
+                "ClientMediaId": client_media_id,
+                "TotalLen": total_len,
+                "StartPos": 0,
+                "DataLen": total_len,
+                "MediaType": MediaType.ATTACHMENT,
+                "ToUserName": to,
+            }
+        )
 
         chunks = math.ceil(total_len / chunk_size)
 
         for chunk in range(chunks):
             r = s.post(
                 "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json",
-                files={"filename": f.read(chunk_size)},
+                files={"filename": (filename, f.read(chunk_size))},
                 data={
                     "chunks": chunks,
                     "chunk": chunk,
                     "mediatype": media_type,
-                    "uploadmediarequest": json.dumps(
-                        {
-                            "BaseRequest": base_request,
-                            "ClientMediaId": client_media_id,
-                            "TotalLen": total_len,
-                            "StartPos": 0,
-                            "DataLen": total_len,
-                            "MediaType": MediaType.ATTACHMENT,
-                            "ToUserName": to,
-                        }
-                    ),
+                    "uploadmediarequest": upload_media_request,
                 },
             )
 
