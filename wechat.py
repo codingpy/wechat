@@ -28,13 +28,28 @@ class MediaType(IntEnum):
     ATTACHMENT = 4
 
 
-def utf_8(r, *args, **kwargs):
-    r.encoding = "utf-8"
+class WeChatError(Exception):
+    ...
+
+
+def monkey_patch(r, *args, **kwargs):
+    if r.headers["Content-Type"] == "text/plain":
+        r.encoding = "utf-8"
+
+        content = r.json()
+
+        base_response = content["BaseResponse"]
+
+        ret = base_response["Ret"]
+        if ret != 0:
+            raise WeChatError(ret, base_response["ErrMsg"])
+
+        r.json = lambda: content
 
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
-s.hooks["response"] = utf_8
+s.hooks["response"] = monkey_patch
 
 user = {}
 contacts = {}
@@ -171,28 +186,28 @@ def logout():
 
 
 def send(content, to):
-    return post(
+    return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsg",
         {"ToUserName": to, "Type": MsgType.TEXT, "Content": content},
     )
 
 
 def send_img(media_id, to):
-    return post(
+    return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
         {"ToUserName": to, "Type": MsgType.IMAGE, "MediaId": media_id},
     )
 
 
 def send_video(media_id, to):
-    return post(
+    return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
         {"ToUserName": to, "Type": MsgType.VIDEO, "MediaId": media_id},
     )
 
 
 def send_app(title, total_len, attach_id, to):
-    return post(
+    return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendappmsg",
         {
             "ToUserName": to,
@@ -212,13 +227,13 @@ def send_app(title, total_len, attach_id, to):
 
 
 def send_emoticon(media_id, to):
-    return post(
+    return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
         {"ToUserName": to, "Type": MsgType.EMOTICON, "MediaId": media_id},
     )
 
 
-def post(url, msg):
+def post_msg(url, msg):
     client_msg_id = time.time_ns()
 
     payload = {
@@ -234,12 +249,11 @@ def post(url, msg):
     r = s.post(url, data=json.dumps(payload, ensure_ascii=False).encode())
     content = r.json()
 
-    if content["BaseResponse"]["Ret"] == 0:
-        return content["MsgID"]
+    return content["MsgID"]
 
 
 def revoke(svr_msg_id, to):
-    r = s.post(
+    s.post(
         "/cgi-bin/mmwebwx-bin/webwxrevokemsg",
         json={
             "BaseRequest": {},
@@ -248,9 +262,6 @@ def revoke(svr_msg_id, to):
             "ClientMsgId": time.time_ns(),
         },
     )
-    content = r.json()
-
-    return content["BaseResponse"]["Ret"]
 
 
 def upload(path, to):
@@ -306,8 +317,7 @@ def upload(path, to):
 
     content = r.json()
 
-    if content["BaseResponse"]["Ret"] == 0:
-        return content["MediaId"]
+    return content["MediaId"]
 
 
 def get_img(msg_id, path):
