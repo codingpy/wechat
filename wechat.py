@@ -33,7 +33,7 @@ class WeChatError(Exception):
 
 
 def monkey_patch(r, *args, **kwargs):
-    if r.headers["Content-Type"] == "text/plain":
+    try:
         r.encoding = "utf-8"
 
         content = r.json()
@@ -45,6 +45,8 @@ def monkey_patch(r, *args, **kwargs):
             raise WeChatError(ret, base_response["ErrMsg"])
 
         r.json = lambda: content
+    except requests.JSONDecodeError:
+        pass
 
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
