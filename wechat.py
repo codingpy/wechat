@@ -33,20 +33,20 @@ class WeChatError(Exception):
 
 
 def monkey_patch(r, *args, **kwargs):
+    r.encoding = "utf-8"
+
     try:
-        r.encoding = "utf-8"
-
         content = r.json()
-
-        base_response = content["BaseResponse"]
-
-        ret = base_response["Ret"]
-        if ret != 0:
-            raise WeChatError(ret, base_response["ErrMsg"])
-
-        r.json = lambda: content
     except requests.JSONDecodeError:
-        pass
+        return
+
+    base_response = content["BaseResponse"]
+
+    ret = base_response["Ret"]
+    if ret != 0:
+        raise WeChatError(ret, base_response["ErrMsg"])
+
+    r.json = lambda: content
 
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
@@ -133,8 +133,6 @@ def sync(sync_key):
 
     while True:
         try:
-            msgs = []
-
             r = s.get(
                 "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck",
                 params={
@@ -145,34 +143,36 @@ def sync(sync_key):
                     ),
                 },
             )
-
-            m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
-
-            if m[1] != "0":
-                logout()
-                return
-
-            if m[2] != "0":
-                r = s.post(
-                    "/cgi-bin/mmwebwx-bin/webwxsync",
-                    json={"BaseRequest": {}, "SyncKey": sync_key},
-                )
-                content = r.json()
-
-                sync_check_key = content["SyncCheckKey"]
-                sync_key = content["SyncKey"]
-
-                for contact in content["ModContactList"]:
-                    add_contact(contact)
-
-                for contact in content["DelContactList"]:
-                    del_contact(contact)
-
-                msgs = content["AddMsgList"]
-
-            yield msgs
         except requests.ConnectionError:
-            pass
+            continue
+
+        m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
+
+        if m[1] != "0":
+            logout()
+            return
+
+        msgs = []
+
+        if m[2] != "0":
+            r = s.post(
+                "/cgi-bin/mmwebwx-bin/webwxsync",
+                json={"BaseRequest": {}, "SyncKey": sync_key},
+            )
+            content = r.json()
+
+            sync_check_key = content["SyncCheckKey"]
+            sync_key = content["SyncKey"]
+
+            for contact in content["ModContactList"]:
+                add_contact(contact)
+
+            for contact in content["DelContactList"]:
+                del_contact(contact)
+
+            msgs = content["AddMsgList"]
+
+        yield msgs
 
 
 def add_contact(contact):
