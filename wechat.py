@@ -40,11 +40,12 @@ def monkey_patch(r, *args, **kwargs):
     except requests.JSONDecodeError:
         return
 
-    base_response = content["BaseResponse"]
+    if "BaseResponse" in content:
+        base_response = content["BaseResponse"]
 
-    ret = base_response["Ret"]
-    if ret != 0:
-        raise WeChatError(ret, base_response["ErrMsg"])
+        ret = base_response["Ret"]
+        if ret != 0:
+            raise WeChatError(ret, base_response["ErrMsg"])
 
     r.json = lambda: content
 
@@ -59,27 +60,30 @@ base_request = {}
 
 
 def login():
+    if "Uin" in base_request:
+        uin = base_request["Uin"]
+
+        r = s.get(f"/cgi-bin/mmwebwx-bin/webwxpushloginurl?uin={uin}")
+        content = r.json()
+
+        if content["ret"] == "0":
+            uuid = content["uuid"]
+
+            if check_login(uuid):
+                return init()
+
+    return login_qr()
+
+
+def login_qr():
     r = s.get("https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb")
 
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
     print_qr(f"https://login.weixin.qq.com/l/{uuid}")
 
-    redirect_uri = check_login(uuid)
-
-    if redirect_uri:
-        r = s.get(redirect_uri, allow_redirects=False)
-
-        sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
-        uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
-
-        base_request.update({"Sid": sid, "Uin": int(uin)})
-
-
-def print_qr(data):
-    qr = qrcode.QRCode()
-    qr.add_data(data)
-    qr.print_ascii()
+    if check_login(uuid):
+        return init()
 
 
 def check_login(uuid):
@@ -89,10 +93,19 @@ def check_login(uuid):
         code = re.search("window.code=(\d+)", r.text)[1]
 
         if code == "200":
-            return re.search('window.redirect_uri="(.*)"', r.text)[1]
+            redirect_uri = re.search('window.redirect_uri="(.*)"', r.text)[1]
+
+            r = s.get(redirect_uri, allow_redirects=False)
+
+            sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
+            uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
+
+            base_request.update({"Sid": sid, "Uin": int(uin)})
+
+            return True
 
         if code == "400":
-            return
+            return False
 
 
 def init():
@@ -185,6 +198,12 @@ def del_contact(contact):
 
 def logout():
     s.post("/cgi-bin/mmwebwx-bin/webwxlogout")
+
+
+def print_qr(data):
+    qr = qrcode.QRCode()
+    qr.add_data(data)
+    qr.print_ascii()
 
 
 def send(content, to):
