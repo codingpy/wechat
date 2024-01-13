@@ -121,24 +121,36 @@ def init():
     for contact in content["ContactList"]:
         add_contact(contact)
 
-    chats = [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
+    for contact in batch_get_contacts(
+        [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
+    ):
+        add_contact(contact)
 
+    seq = 0
+
+    while True:
+        r = s.get(f"/cgi-bin/mmwebwx-bin/webwxgetcontact?seq={seq}")
+        content = r.json()
+
+        for contact in content["MemberList"]:
+            add_contact(contact)
+
+        seq = content["Seq"]
+
+        if seq == 0:
+            break
+
+    return check_msg(sync_key)
+
+
+def batch_get_contacts(users):
     r = s.post(
         "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
-        json={"BaseRequest": {}, "Count": len(chats), "List": chats},
+        json={"BaseRequest": {}, "Count": len(users), "List": users},
     )
     content = r.json()
 
-    for contact in content["ContactList"]:
-        add_contact(contact)
-
-    r = s.get("/cgi-bin/mmwebwx-bin/webwxgetcontact")
-    content = r.json()
-
-    for contact in content["MemberList"]:
-        add_contact(contact)
-
-    return check_msg(sync_key)
+    return content["ContactList"]
 
 
 def check_msg(sync_key):
