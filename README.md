@@ -7,10 +7,9 @@ Usage:
 ```python
 import wechat
 
-wechat.login()  # Scan to log in
+msgs = wechat.login()  # Scan to log in
 
-msgs = wechat.init()
 next(msgs)
 
-wechat.send('hello, world', to='filehelper')
+wechat.send("hello, world", "filehelper")
 ```

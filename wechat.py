@@ -138,10 +138,10 @@ def init():
     for contact in content["MemberList"]:
         add_contact(contact)
 
-    return sync(sync_key)
+    return check_msg(sync_key)
 
 
-def sync(sync_key):
+def check_msg(sync_key):
     sync_check_key = sync_key
 
     while True:
@@ -206,32 +206,32 @@ def print_qr(data):
     qr.print_ascii()
 
 
-def send(content, to):
+def send(content, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsg",
-        {"ToUserName": to, "Type": MsgType.TEXT, "Content": content},
+        {"ToUserName": to_user_name, "Type": MsgType.TEXT, "Content": content},
     )
 
 
-def send_img(media_id, to):
+def send_img(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
-        {"ToUserName": to, "Type": MsgType.IMAGE, "MediaId": media_id},
+        {"ToUserName": to_user_name, "Type": MsgType.IMAGE, "MediaId": media_id},
     )
 
 
-def send_video(media_id, to):
+def send_video(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
-        {"ToUserName": to, "Type": MsgType.VIDEO, "MediaId": media_id},
+        {"ToUserName": to_user_name, "Type": MsgType.VIDEO, "MediaId": media_id},
     )
 
 
-def send_app(title, total_len, attach_id, to):
+def send_app(title, total_len, attach_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendappmsg",
         {
-            "ToUserName": to,
+            "ToUserName": to_user_name,
             "Type": AppMsgType.ATTACH,
             "Content": (
                 f"<appmsg>"
@@ -247,10 +247,10 @@ def send_app(title, total_len, attach_id, to):
     )
 
 
-def send_emoticon(media_id, to):
+def send_emoticon(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
-        {"ToUserName": to, "Type": MsgType.EMOTICON, "MediaId": media_id},
+        {"ToUserName": to_user_name, "Type": MsgType.EMOTICON, "MediaId": media_id},
     )
 
 
@@ -273,19 +273,19 @@ def post_msg(url, msg):
     return content["MsgID"]
 
 
-def revoke(svr_msg_id, to):
+def revoke(svr_msg_id, to_user_name):
     s.post(
         "/cgi-bin/mmwebwx-bin/webwxrevokemsg",
         json={
             "BaseRequest": {},
             "SvrMsgId": svr_msg_id,
-            "ToUserName": to,
+            "ToUserName": to_user_name,
             "ClientMsgId": time.time_ns(),
         },
     )
 
 
-def upload(path, to):
+def upload(path, to_user_name):
     client_media_id = time.time_ns()
 
     chunk_size = int(0.5 * 1024 * 1024)
@@ -318,7 +318,7 @@ def upload(path, to):
                 "StartPos": 0,
                 "DataLen": total_len,
                 "MediaType": MediaType.ATTACHMENT,
-                "ToUserName": to,
+                "ToUserName": to_user_name,
             }
         )
 
