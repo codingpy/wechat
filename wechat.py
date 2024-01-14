@@ -118,13 +118,13 @@ def init():
 
     add_contact(user)
 
-    for contact in content["ContactList"]:
-        add_contact(contact)
+    add_contacts(content["ContactList"])
 
-    for contact in batch_get_contacts(
-        [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
-    ):
-        add_contact(contact)
+    add_contacts(
+        batch_get_contacts(
+            [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
+        )
+    )
 
     seq = 0
 
@@ -132,8 +132,7 @@ def init():
         r = s.get(f"/cgi-bin/mmwebwx-bin/webwxgetcontact?seq={seq}")
         content = r.json()
 
-        for contact in content["MemberList"]:
-            add_contact(contact)
+        add_contacts(content["MemberList"])
 
         seq = content["Seq"]
 
@@ -189,23 +188,41 @@ def check_msg(sync_key):
             sync_check_key = content["SyncCheckKey"]
             sync_key = content["SyncKey"]
 
-            for contact in content["ModContactList"]:
-                add_contact(contact)
-
-            for contact in content["DelContactList"]:
-                del_contact(contact)
+            add_contacts(content["ModContactList"])
+            del_contacts(content["DelContactList"])
 
             msgs = content["AddMsgList"]
 
         yield msgs
 
 
+def add_contacts(contacts):
+    for contact in contacts:
+        add_contact(contact)
+
+
+def del_contacts(contacts):
+    for contact in contacts:
+        del_contact(contact)
+
+
 def add_contact(contact):
-    contacts[contact["UserName"]] = contact
+    user_name = contact["UserName"]
+
+    if is_room_contact(user_name):
+        add_contacts(contact["MemberList"])
+
+    contacts[user_name] = contact
 
 
 def del_contact(contact):
-    del contacts[contact["UserName"]]
+    user_name = contact["UserName"]
+
+    del contacts[user_name]
+
+
+def is_room_contact(user_name):
+    return user_name.startswith("@@")
 
 
 def logout():
