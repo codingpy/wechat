@@ -4,6 +4,7 @@ import mimetypes
 import os
 import re
 import time
+from dataclasses import dataclass
 from enum import IntEnum
 
 import qrcode
@@ -26,6 +27,109 @@ class AppMsgType(IntEnum):
 
 class MediaType(IntEnum):
     ATTACHMENT = 4
+
+
+class Base:
+    @classmethod
+    def from_dict(cls, d):
+        kwargs = {}
+
+        for key, value in d.items():
+            key, value = preprocessor(key, value)
+
+            kwargs[key] = value
+
+        return cls(**kwargs)
+
+
+def preprocessor(key, value):
+    if key == "MemberList":
+        value = list(map(Member.from_dict, value))
+
+    key = to_snake(key)
+
+    return key, value
+
+
+def to_snake(s):
+    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
+
+
+@dataclass
+class UserBase(Base):
+    user_name: str
+    nick_name: str
+
+
+@dataclass
+class User(UserBase):
+    uin: int
+    head_img_url: str
+    remark_name: str
+    py_initial: str
+    py_quan_pin: str
+    remark_py_initial: str
+    remark_py_quan_pin: str
+    hide_input_bar_flag: int
+    star_friend: int
+    sex: int
+    signature: str
+    app_account_flag: int
+    verify_flag: int
+    contact_flag: int
+    web_wx_plugin_switch: int
+    head_img_flag: int
+    sns_flag: int
+
+
+@dataclass
+class Member(UserBase):
+    uin: int
+    attr_status: int
+    py_initial: str
+    py_quan_pin: str
+    remark_py_initial: str
+    remark_py_quan_pin: str
+    member_status: int
+    display_name: str
+    key_word: str
+
+
+@dataclass
+class Contact(UserBase):
+    uin: int
+    head_img_url: str
+    contact_flag: int
+    member_count: int
+    member_list: list[Member]
+    remark_name: str
+    hide_input_bar_flag: int
+    sex: int
+    signature: str
+    verify_flag: int
+    owner_uin: int
+    py_initial: str
+    py_quan_pin: str
+    remark_py_initial: str
+    remark_py_quan_pin: str
+    star_friend: int
+    app_account_flag: int
+    statues: int
+    attr_status: int
+    province: str
+    city: str
+    alias: str
+    sns_flag: int
+    uni_friend: int
+    display_name: str
+    chat_room_id: int
+    key_word: str
+    encry_chat_room_id: str
+    is_owner: int
+
+    @property
+    def is_room(self):
+        return self.user_name.startswith("@@")
 
 
 class WeChatError(Exception):
@@ -116,8 +220,6 @@ def init():
 
     user.update(content["User"])
 
-    add_contact(user)
-
     add_contacts(content["ContactList"])
 
     add_contacts(
@@ -207,22 +309,15 @@ def del_contacts(contacts):
 
 
 def add_contact(contact):
-    user_name = contact["UserName"]
+    c = Contact.from_dict(contact)
 
-    if is_room_contact(user_name):
-        add_contacts(contact["MemberList"])
-
-    contacts[user_name] = contact
+    contacts[c.user_name] = c
 
 
 def del_contact(contact):
     user_name = contact["UserName"]
 
     del contacts[user_name]
-
-
-def is_room_contact(user_name):
-    return user_name.startswith("@@")
 
 
 def logout():
