@@ -5,12 +5,20 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 
 import qrcode
 import requests
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
+
+
+class ContactFlag(IntFlag):
+    BLACKLIST = 8
+
+
+class VerifyFlag(IntFlag):
+    BIZ_BRAND = 8
 
 
 class MsgType(IntEnum):
@@ -31,7 +39,7 @@ class MediaType(IntEnum):
 
 class Base:
     @classmethod
-    def from_dict(cls, d):
+    def make(cls, d):
         kwargs = {}
 
         for key, value in d.items():
@@ -44,7 +52,7 @@ class Base:
 
 def preprocessor(key, value):
     if key == "MemberList":
-        value = list(map(Member.from_dict, value))
+        value = list(map(Member.make, value))
 
     key = to_snake(key)
 
@@ -62,14 +70,19 @@ class UserBase(Base):
 
 
 @dataclass
-class User(UserBase):
+class Pinyin:
+    py_initial: str
+    py_quan_pin: str
+
+    remark_py_initial: str
+    remark_py_quan_pin: str
+
+
+@dataclass
+class User(UserBase, Pinyin):
     uin: int
     head_img_url: str
     remark_name: str
-    py_initial: str
-    py_quan_pin: str
-    remark_py_initial: str
-    remark_py_quan_pin: str
     hide_input_bar_flag: int
     star_friend: int
     sex: int
@@ -83,20 +96,16 @@ class User(UserBase):
 
 
 @dataclass
-class Member(UserBase):
+class Member(UserBase, Pinyin):
     uin: int
     attr_status: int
-    py_initial: str
-    py_quan_pin: str
-    remark_py_initial: str
-    remark_py_quan_pin: str
     member_status: int
     display_name: str
     key_word: str
 
 
 @dataclass
-class Contact(UserBase):
+class Contact(UserBase, Pinyin):
     uin: int
     head_img_url: str
     contact_flag: int
@@ -108,10 +117,6 @@ class Contact(UserBase):
     signature: str
     verify_flag: int
     owner_uin: int
-    py_initial: str
-    py_quan_pin: str
-    remark_py_initial: str
-    remark_py_quan_pin: str
     star_friend: int
     app_account_flag: int
     statues: int
@@ -127,9 +132,25 @@ class Contact(UserBase):
     encry_chat_room_id: str
     is_owner: int
 
+    head_img_update_flag: int = 0
+    contact_type: int = 0
+    chat_room_owner: str = ""
+
+    @property
+    def is_black(self):
+        return self.contact_flag & ContactFlag.BLACKLIST
+
     @property
     def is_room(self):
         return self.user_name.startswith("@@")
+
+    @property
+    def is_brand(self):
+        return self.verify_flag & VerifyFlag.BIZ_BRAND
+
+    @property
+    def has_photo_album(self):
+        return self.sns_flag & 1
 
 
 class WeChatError(Exception):
@@ -309,7 +330,7 @@ def del_contacts(contacts):
 
 
 def add_contact(contact):
-    c = Contact.from_dict(contact)
+    c = Contact.make(contact)
 
     contacts[c.user_name] = c
 
