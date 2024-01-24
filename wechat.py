@@ -138,7 +138,7 @@ class Contact(UserBase, Pinyin):
 
     @property
     def is_black(self):
-        return self.contact_flag & ContactFlag.BLACKLIST
+        return bool(self.contact_flag & ContactFlag.BLACKLIST)
 
     @property
     def is_room(self):
@@ -146,11 +146,11 @@ class Contact(UserBase, Pinyin):
 
     @property
     def is_brand(self):
-        return self.verify_flag & VerifyFlag.BIZ_BRAND
+        return bool(self.verify_flag & VerifyFlag.BIZ_BRAND)
 
     @property
     def has_photo_album(self):
-        return self.sns_flag & 1
+        return bool(self.sns_flag & 1)
 
 
 class WeChatError(Exception):
