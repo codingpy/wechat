@@ -6,6 +6,7 @@ import re
 import time
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
+from http.client import BadStatusLine
 
 import qrcode
 import requests
@@ -48,19 +49,6 @@ class Base:
             kwargs[key] = value
 
         return cls(**kwargs)
-
-
-def preprocessor(key, value):
-    if key == "MemberList":
-        value = list(map(Member.make, value))
-
-    key = to_snake(key)
-
-    return key, value
-
-
-def to_snake(s):
-    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
 @dataclass
@@ -151,6 +139,25 @@ class Contact(UserBase, Pinyin):
     @property
     def has_photo_album(self):
         return bool(self.sns_flag & 1)
+
+    def update(self, d):
+        for key, value in d.items():
+            key, value = preprocessor(key, value)
+
+            setattr(self, key, value)
+
+
+def preprocessor(key, value):
+    if key == "MemberList":
+        value = list(map(Member.make, value))
+
+    key = to_snake(key)
+
+    return key, value
+
+
+def to_snake(s):
+    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
 class WeChatError(Exception):
@@ -286,12 +293,13 @@ def check_msg(sync_key):
                     "sid": base_request["Sid"],
                     "uin": base_request["Uin"],
                     "synckey": "|".join(
-                        f"{x['Key']}_{x['Val']}" for x in sync_check_key["List"]
+                        f'{x["Key"]}_{x["Val"]}' for x in sync_check_key["List"]
                     ),
                 },
             )
-        except requests.ConnectionError:
-            continue
+        except requests.ConnectionError as e:
+            if not isinstance(e.args[0].args[1], BadStatusLine):  # HTTP/1.1 0 -\r\n
+                raise
 
         m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
 
@@ -330,9 +338,16 @@ def del_contacts(contacts):
 
 
 def add_contact(contact):
-    c = Contact.make(contact)
+    user_name = contact["UserName"]
 
-    contacts[c.user_name] = c
+    if user_name in contacts:
+        c = contacts[user_name]
+
+        c.update(contact)
+    else:
+        c = Contact.make(contact)
+
+        contacts[user_name] = c
 
 
 def del_contact(contact):
