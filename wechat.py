@@ -301,6 +301,8 @@ def check_msg(sync_key):
             if not isinstance(e.args[0].args[1], BadStatusLine):  # HTTP/1.1 0 -\r\n
                 raise
 
+            continue
+
         m = re.search('window.synccheck={retcode:"(.*)",selector:"(.*)"}', r.text)
 
         if m[1] != "0":
