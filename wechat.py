@@ -150,6 +150,10 @@ class Contact(UserBase, Pinyin):
 def preprocessor(key, value):
     if key == "MemberList":
         value = list(map(Member.make, value))
+    elif key == "RecommendInfo":
+        value = RecommendInfo.make(value)
+    elif key == "AppInfo":
+        value = AppInfo.make(value)
 
     key = to_snake(key)
 
@@ -158,6 +162,60 @@ def preprocessor(key, value):
 
 def to_snake(s):
     return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
+
+
+@dataclass
+class RecommendInfo(UserBase):
+    qq_num: int
+    province: str
+    city: str
+    content: str
+    signature: str
+    alias: str
+    scene: int
+    verify_flag: int
+    attr_status: int
+    sex: int
+    ticket: str
+    op_code: int
+
+
+@dataclass
+class AppInfo(Base):
+    app_id: str
+    type: int
+
+
+@dataclass
+class Msg(Base):
+    msg_id: str
+    from_user_name: str
+    to_user_name: str
+    msg_type: int
+    content: str
+    status: int
+    img_status: int
+    create_time: int
+    voice_length: int
+    play_length: int
+    file_name: str
+    file_size: str
+    media_id: str
+    url: str
+    app_msg_type: int
+    status_notify_code: int
+    status_notify_user_name: str
+    recommend_info: RecommendInfo
+    forward_flag: int
+    app_info: AppInfo
+    has_product_id: int
+    ticket: str
+    img_height: int
+    img_width: int
+    sub_msg_type: int
+    new_msg_id: int
+    ori_content: str
+    encry_file_name: str
 
 
 class WeChatError(Exception):
@@ -327,6 +385,12 @@ def check_msg(sync_key):
             msgs = content["AddMsgList"]
 
         yield msgs
+
+
+def process_msg(msg):
+    m = Msg.make(msg)
+
+    return m
 
 
 def add_contacts(contacts):
