@@ -16,6 +16,8 @@ from requests_toolbelt.downloadutils import stream
 
 class ContactFlag(IntFlag):
     BLACKLIST = 8
+    NOTIFY_CLOSE = 0x200
+    TOP = 0x800
 
 
 class VerifyFlag(IntFlag):
@@ -135,6 +137,17 @@ class Contact(UserBase, Pinyin):
     @property
     def is_brand(self):
         return bool(self.verify_flag & VerifyFlag.BIZ_BRAND)
+
+    @property
+    def is_muted(self):
+        if self.is_room:
+            return self.statues == 0
+        else:
+            return bool(self.contact_flag & ContactFlag.NOTIFY_CLOSE)
+
+    @property
+    def is_top(self):
+        return bool(self.contact_flag & ContactFlag.TOP)
 
     @property
     def has_photo_album(self):
