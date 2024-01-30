@@ -7,11 +7,15 @@ import time
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
+from xml.sax.saxutils import unescape
 
 import qrcode
 import requests
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
+
+FILE_HELPER = "filehelper"
+NEWS_APP = "newsapp"
 
 
 class ContactFlag(IntFlag):
@@ -132,11 +136,19 @@ class Contact(UserBase, Pinyin):
 
     @property
     def is_room(self):
-        return self.user_name.startswith("@@")
+        return is_room_contact(self.user_name)
 
     @property
     def is_brand(self):
         return bool(self.verify_flag & VerifyFlag.BIZ_BRAND)
+
+    @property
+    def is_file_helper(self):
+        return is_file_helper(self.user_name)
+
+    @property
+    def is_news_app(self):
+        return is_news_app(self.user_name)
 
     @property
     def is_muted(self):
@@ -229,6 +241,23 @@ class Msg(Base):
     new_msg_id: int
     ori_content: str
     encry_file_name: str
+
+    def __post_init__(self):
+        if self.msg_type == MsgType.TEXT:
+            if is_news_app(self.from_user_name):
+                self.content = unescape(self.content)
+
+
+def is_room_contact(user_name):
+    return user_name.startswith("@@")
+
+
+def is_file_helper(user_name):
+    return user_name == FILE_HELPER
+
+
+def is_news_app(user_name):
+    return user_name == NEWS_APP
 
 
 class WeChatError(Exception):
@@ -398,12 +427,6 @@ def check_msg(sync_key):
             msgs = content["AddMsgList"]
 
         yield msgs
-
-
-def process_msg(msg):
-    m = Msg.make(msg)
-
-    return m
 
 
 def add_contacts(contacts):
