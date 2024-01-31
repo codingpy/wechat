@@ -34,6 +34,11 @@ class MsgType(IntEnum):
     VOICE = 34
     VIDEO = 43
     EMOTICON = 47
+    STATUS_NOTIFY = 51
+
+
+class StatusNotifyCode(IntEnum):
+    SYNC_CONV = 4
 
 
 class AppMsgType(IntEnum):
@@ -129,6 +134,10 @@ class Contact(UserBase, Pinyin):
     head_img_update_flag: int = 0
     contact_type: int = 0
     chat_room_owner: str = ""
+
+    @property
+    def is_me(self):
+        return is_me(self.user_name)
 
     @property
     def is_black(self):
@@ -243,9 +252,27 @@ class Msg(Base):
     encry_file_name: str
 
     def __post_init__(self):
+        if self.msg_type == MsgType.STATUS_NOTIFY:
+            if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
+                init_chats([self.status_notify_user_name])
+
+            return
+
         if self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
-                self.content = unescape(self.content)
+                self.content = unescape(self.content.replace("<br/>", "\n"))
+
+    @property
+    def is_send(self):
+        return is_me(self.from_user_name)
+
+    @property
+    def peer_user_name(self):
+        return self.to_user_name if self.is_send else self.from_user_name
+
+
+def is_me(user_name):
+    return user_name == user.user_name
 
 
 def is_room_contact(user_name):
@@ -350,11 +377,7 @@ def init():
 
     add_contacts(content["ContactList"])
 
-    add_contacts(
-        batch_get_contacts(
-            [{"UserName": user_name} for user_name in content["ChatSet"].split(",")]
-        )
-    )
+    init_chats(content["ChatSet"].split(","))
 
     seq = 0
 
@@ -370,6 +393,14 @@ def init():
             break
 
     return check_msg(sync_key)
+
+
+def init_chats(user_names):
+    add_contacts(
+        batch_get_contacts(
+            [{"UserName": user_name} for user_name in user_names if user_name]
+        )
+    )
 
 
 def batch_get_contacts(users):
@@ -545,6 +576,22 @@ def revoke(svr_msg_id, to_user_name):
             "ClientMsgId": time.time_ns(),
         },
     )
+
+
+def notify(code, to_user_name):
+    r = s.post(
+        "/cgi-bin/mmwebwx-bin/webwxstatusnotify",
+        json={
+            "BaseRequest": {},
+            "Code": code,
+            "FromUserName": user["UserName"],
+            "ToUserName": to_user_name,
+            "ClientMsgId": time.time_ns(),
+        },
+    )
+    content = r.json()
+
+    return content["MsgID"]
 
 
 def upload(path, to_user_name):
