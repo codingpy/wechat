@@ -38,6 +38,9 @@ class MsgType(IntEnum):
 
 
 class StatusNotifyCode(IntEnum):
+    READED = 1
+    ENTER_SESSION = 2
+    INITED = 3
     SYNC_CONV = 4
 
 
@@ -258,9 +261,11 @@ class Msg(Base):
 
             return
 
+        content = self.content.replace("<br/>", "\n")
+
         if self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
-                self.content = unescape(self.content.replace("<br/>", "\n"))
+                self.content = unescape(content)
 
     @property
     def is_send(self):
@@ -269,6 +274,10 @@ class Msg(Base):
     @property
     def peer_user_name(self):
         return self.to_user_name if self.is_send else self.from_user_name
+
+    @property
+    def is_room(self):
+        return is_room_contact(self.peer_user_name)
 
 
 def is_me(user_name):
@@ -595,8 +604,6 @@ def notify(code, to_user_name):
 
 
 def upload(path, to_user_name):
-    client_media_id = time.time_ns()
-
     chunk_size = int(0.5 * 1024 * 1024)
 
     filename = os.path.basename(path)
@@ -622,7 +629,7 @@ def upload(path, to_user_name):
         upload_media_request = json.dumps(
             {
                 "BaseRequest": base_request,
-                "ClientMediaId": client_media_id,
+                "ClientMediaId": time.time_ns(),
                 "TotalLen": total_len,
                 "StartPos": 0,
                 "DataLen": total_len,
