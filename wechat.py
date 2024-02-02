@@ -263,6 +263,14 @@ class Msg(Base):
 
         content = self.content.replace("<br/>", "\n")
 
+        if self.is_room:
+            m = re.search("^(@[a-z0-9]*):\n(.*)", content)
+
+            if m:
+                self.sender = m[1]
+
+                content = m[2]
+
         if self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
                 self.content = unescape(content)
@@ -296,8 +304,7 @@ def is_news_app(user_name):
     return user_name == NEWS_APP
 
 
-class WeChatError(Exception):
-    ...
+class WeChatError(Exception): ...
 
 
 def monkey_patch(r, *args, **kwargs):
