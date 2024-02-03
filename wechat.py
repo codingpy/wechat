@@ -138,29 +138,19 @@ class Contact(UserBase, Pinyin):
     contact_type: int = 0
     chat_room_owner: str = ""
 
-    @property
-    def is_me(self):
-        return is_me(self.user_name)
+    def __post_init__(self):
+        self.is_me = is_me(self.user_name)
+        self.is_room = is_room_contact(self.user_name)
+        self.is_file_helper = is_file_helper(self.user_name)
+        self.is_news_app = is_news_app(self.user_name)
 
     @property
     def is_black(self):
         return bool(self.contact_flag & ContactFlag.BLACKLIST)
 
     @property
-    def is_room(self):
-        return is_room_contact(self.user_name)
-
-    @property
     def is_brand(self):
         return bool(self.verify_flag & VerifyFlag.BIZ_BRAND)
-
-    @property
-    def is_file_helper(self):
-        return is_file_helper(self.user_name)
-
-    @property
-    def is_news_app(self):
-        return is_news_app(self.user_name)
 
     @property
     def is_muted(self):
@@ -255,6 +245,12 @@ class Msg(Base):
     encry_file_name: str
 
     def __post_init__(self):
+        self.is_send = is_me(self.from_user_name)
+
+        self.peer_user_name = self.to_user_name if self.is_send else self.from_user_name
+
+        self.is_room = is_room_contact(self.peer_user_name)
+
         if self.msg_type == MsgType.STATUS_NOTIFY:
             if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
                 init_chats([self.status_notify_user_name])
@@ -274,18 +270,6 @@ class Msg(Base):
         if self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
                 self.content = unescape(content)
-
-    @property
-    def is_send(self):
-        return is_me(self.from_user_name)
-
-    @property
-    def peer_user_name(self):
-        return self.to_user_name if self.is_send else self.from_user_name
-
-    @property
-    def is_room(self):
-        return is_room_contact(self.peer_user_name)
 
 
 def is_me(user_name):
