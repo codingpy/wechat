@@ -497,7 +497,7 @@ def add_contact(contact):
 
         c.update(contact)
     else:
-        c = Contact.make(contact)
+        c = Contact.create(contact)
 
         contacts[user_name] = c
 
