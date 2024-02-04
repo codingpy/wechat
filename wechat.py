@@ -4,7 +4,8 @@ import mimetypes
 import os
 import re
 import time
-from dataclasses import dataclass
+import typing
+from dataclasses import dataclass, fields
 from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
 from xml.sax.saxutils import unescape
@@ -52,17 +53,49 @@ class MediaType(IntEnum):
     ATTACHMENT = 4
 
 
+@dataclass
 class Base:
     @classmethod
-    def make(cls, d):
-        kwargs = {}
+    def create(cls, d):
+        return cls(**cls.coerce(d))
+
+    @classmethod
+    def coerce(cls, d):
+        res = {}
+
+        hints = get_dataclass_hints(cls)
 
         for key, value in d.items():
-            key, value = preprocessor(key, value)
+            key = to_snake(key)
 
-            kwargs[key] = value
+            if key in hints:
+                typ = hints[key]
 
-        return cls(**kwargs)
+                if issubclass(typ, Base):
+                    value = typ.create(value)
+                else:
+                    if typing.get_origin(typ) is list:
+                        args = typing.get_args(typ)
+
+                        if args:
+                            arg = args[0]
+
+                            if issubclass(arg, Base):
+                                value = list(map(arg.create, value))
+
+                res[key] = value
+
+        return res
+
+
+def get_dataclass_hints(class_or_instance):
+    hints = typing.get_type_hints(class_or_instance)
+
+    return {field.name: hints[field.name] for field in fields(class_or_instance)}
+
+
+def to_snake(s):
+    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
 @dataclass
@@ -168,27 +201,10 @@ class Contact(UserBase, Pinyin):
         return bool(self.sns_flag & 1)
 
     def update(self, d):
+        d = self.coerce(d)
+
         for key, value in d.items():
-            key, value = preprocessor(key, value)
-
             setattr(self, key, value)
-
-
-def preprocessor(key, value):
-    if key == "MemberList":
-        value = list(map(Member.make, value))
-    elif key == "RecommendInfo":
-        value = RecommendInfo.make(value)
-    elif key == "AppInfo":
-        value = AppInfo.make(value)
-
-    key = to_snake(key)
-
-    return key, value
-
-
-def to_snake(s):
-    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
 @dataclass
@@ -313,16 +329,13 @@ s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
 s.hooks["response"] = monkey_patch
 
-user = {}
 contacts = {}
 base_request = {}
 
 
 def login():
-    if "Uin" in base_request:
-        uin = base_request["Uin"]
-
-        r = s.get(f"/cgi-bin/mmwebwx-bin/webwxpushloginurl?uin={uin}")
+    if s.cookies:
+        r = s.get(f"/cgi-bin/mmwebwx-bin/webwxpushloginurl?uin={user.uin}")
         content = r.json()
 
         if content["ret"] == "0":
@@ -373,7 +386,7 @@ def init():
 
     sync_key = content["SyncKey"]
 
-    user.update(content["User"])
+    set_user_info(content["User"])
 
     add_contacts(content["ContactList"])
 
@@ -393,6 +406,12 @@ def init():
             break
 
     return check_msg(sync_key)
+
+
+def set_user_info(user_info):
+    global user
+
+    user = User.create(user_info)
 
 
 def init_chats(user_names):
@@ -555,7 +574,7 @@ def post_msg(url, msg):
         "Msg": {
             "ClientMsgId": client_msg_id,
             "LocalID": client_msg_id,
-            "FromUserName": user["UserName"],
+            "FromUserName": user.user_name,
             **msg,
         },
     }
@@ -584,7 +603,7 @@ def notify(code, to_user_name):
         json={
             "BaseRequest": {},
             "Code": code,
-            "FromUserName": user["UserName"],
+            "FromUserName": user.user_name,
             "ToUserName": to_user_name,
             "ClientMsgId": time.time_ns(),
         },
