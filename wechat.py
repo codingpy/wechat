@@ -17,6 +17,7 @@ from requests_toolbelt.downloadutils import stream
 
 FILE_HELPER = "filehelper"
 NEWS_APP = "newsapp"
+WEIXIN = "weixin"
 
 
 class ContactFlag(IntFlag):
@@ -35,7 +36,9 @@ class MsgType(IntEnum):
     VOICE = 34
     VIDEO = 43
     EMOTICON = 47
+    APP = 49
     STATUS_NOTIFY = 51
+    RECALLED = 10002
 
 
 class StatusNotifyCode(IntEnum):
@@ -46,6 +49,7 @@ class StatusNotifyCode(IntEnum):
 
 
 class AppMsgType(IntEnum):
+    URL = 5
     ATTACH = 6
 
 
@@ -269,7 +273,7 @@ class Msg(Base):
 
         if self.msg_type == MsgType.STATUS_NOTIFY:
             if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
-                init_chats([self.status_notify_user_name])
+                init_chats(self.status_notify_user_name)
 
             return
 
@@ -283,9 +287,16 @@ class Msg(Base):
 
                 content = m[2]
 
-        if self.msg_type == MsgType.TEXT:
+        content = unescape(content)
+
+        if self.msg_type == MsgType.APP:
+            if self.app_msg_type == AppMsgType.URL:
+                ...
+        elif self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
-                self.content = unescape(content)
+                ...
+        elif self.msg_type == MsgType.RECALLED:
+            ...
 
 
 def is_me(user_name):
@@ -302,6 +313,10 @@ def is_file_helper(user_name):
 
 def is_news_app(user_name):
     return user_name == NEWS_APP
+
+
+def is_weixin(user_name):
+    return user_name == WEIXIN
 
 
 class WeChatError(Exception): ...
@@ -329,12 +344,14 @@ s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
 s.hooks["response"] = monkey_patch
 
+user = None
+
 contacts = {}
 base_request = {}
 
 
 def login():
-    if s.cookies:
+    if user:
         r = s.get(f"/cgi-bin/mmwebwx-bin/webwxpushloginurl?uin={user.uin}")
         content = r.json()
 
@@ -390,7 +407,7 @@ def init():
 
     add_contacts(content["ContactList"])
 
-    init_chats(content["ChatSet"].split(","))
+    init_chats(content["ChatSet"])
 
     seq = 0
 
@@ -415,6 +432,9 @@ def set_user_info(user_info):
 
 
 def init_chats(user_names):
+    if isinstance(user_names, str):
+        user_names = user_names.split(",")
+
     add_contacts(
         batch_get_contacts(
             [{"UserName": user_name} for user_name in user_names if user_name]
