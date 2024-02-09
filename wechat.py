@@ -5,13 +5,14 @@ import os
 import re
 import time
 import typing
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
 from xml.sax.saxutils import unescape
 
 import qrcode
 import requests
+import xmltodict
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
 
@@ -36,6 +37,7 @@ class MsgType(IntEnum):
     VOICE = 34
     VIDEO = 43
     EMOTICON = 47
+    LOCATION = 48
     APP = 49
     STATUS_NOTIFY = 51
     RECALLED = 10002
@@ -110,11 +112,11 @@ class UserBase(Base):
 
 @dataclass
 class Pinyin:
-    py_initial: str
-    py_quan_pin: str
+    py_initial: str = field(repr=False)
+    py_quan_pin: str = field(repr=False)
 
-    remark_py_initial: str
-    remark_py_quan_pin: str
+    remark_py_initial: str = field(repr=False)
+    remark_py_quan_pin: str = field(repr=False)
 
 
 @dataclass
@@ -287,7 +289,7 @@ class Msg(Base):
 
                 content = m[2]
 
-        content = unescape(content)
+        content = render(content)
 
         if self.msg_type == MsgType.APP:
             if self.app_msg_type == AppMsgType.URL:
@@ -295,6 +297,10 @@ class Msg(Base):
         elif self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
                 ...
+            elif self.sub_msg_type == MsgType.LOCATION:
+                self.location_desc, location_url = content.split(":\n")
+
+                self.location_url = self.url or location_url
         elif self.msg_type == MsgType.RECALLED:
             ...
 
@@ -317,6 +323,18 @@ def is_news_app(user_name):
 
 def is_weixin(user_name):
     return user_name == WEIXIN
+
+
+def render(s):
+    return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
+
+
+def hexchr(x):
+    return chr(int(x, base=16))
+
+
+def parse_xml(xml):
+    return xmltodict.parse(unescape(xml))
 
 
 class WeChatError(Exception): ...
