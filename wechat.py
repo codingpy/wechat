@@ -112,7 +112,7 @@ class UserBase(Base):
 
 
 @dataclass
-class Pinyin:
+class UserWithPinyinBase(UserBase):
     py_initial: str = field(repr=False)
     py_quan_pin: str = field(repr=False)
 
@@ -121,7 +121,7 @@ class Pinyin:
 
 
 @dataclass
-class User(UserBase, Pinyin):
+class User(UserWithPinyinBase):
     uin: int
     head_img_url: str
     remark_name: str
@@ -138,7 +138,7 @@ class User(UserBase, Pinyin):
 
 
 @dataclass
-class Member(UserBase, Pinyin):
+class Member(UserWithPinyinBase):
     uin: int
     attr_status: int
     member_status: int
@@ -147,7 +147,7 @@ class Member(UserBase, Pinyin):
 
 
 @dataclass
-class Contact(UserBase, Pinyin):
+class Contact(UserWithPinyinBase):
     uin: int
     head_img_url: str
     contact_flag: int
