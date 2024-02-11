@@ -54,6 +54,7 @@ class StatusNotifyCode(IntEnum):
 class AppMsgType(IntEnum):
     URL = 5
     ATTACH = 6
+    REALTIME_SHARE_LOCATION = 17
 
 
 class MediaType(IntEnum):
@@ -280,7 +281,7 @@ class Msg(Base):
 
             return
 
-        content = self.content.replace("<br/>", "\n")
+        content = render(self.content)
 
         if self.is_room:
             m = re.search("^(@[a-z0-9]*):\n(.*)", content)
@@ -290,20 +291,21 @@ class Msg(Base):
 
                 content = m[2]
 
-        content = render(content)
-
         if self.msg_type == MsgType.APP:
             if self.app_msg_type == AppMsgType.URL:
-                ...
+                self.xml = parse(content)
+            elif self.app_msg_type == AppMsgType.REALTIME_SHARE_LOCATION:
+                self.xml = parse(content)
         elif self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
-                ...
+                self.xml = parse(content)
             elif self.sub_msg_type == MsgType.LOCATION:
                 self.location_desc, location_url = content.split(":\n")
-
                 self.location_url = self.url or location_url
+
+                self.xml = parse_xml(self.ori_content)
         elif self.msg_type == MsgType.RECALLED:
-            ...
+            self.xml = parse(content)
 
 
 def is_me(user_name):
@@ -327,6 +329,8 @@ def is_weixin(user_name):
 
 
 def render(s):
+    s = s.replace("<br/>", "\n")
+
     return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
 
 
