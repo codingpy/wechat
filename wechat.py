@@ -41,6 +41,7 @@ class MsgType(IntEnum):
     LOCATION = 48
     APP = 49
     STATUS_NOTIFY = 51
+    SYS = 10000
     RECALLED = 10002
 
 
@@ -437,12 +438,11 @@ def init():
     content = r.json()
 
     sync_key = content["SyncKey"]
-
     set_user_info(content["User"])
-
     add_contacts(content["ContactList"])
-
     init_chats(content["ChatSet"])
+
+    notify(StatusNotifyCode.INITED, user.user_name)
 
     seq = 0
 
