@@ -334,10 +334,6 @@ def hexchr(x):
     return chr(int(x, base=16))
 
 
-def parse_xml(xml):
-    return xmltodict.parse(unescape(xml))
-
-
 class WeChatError(Exception): ...
 
 
@@ -370,7 +366,6 @@ s.headers["User-Agent"] = ua.random
 user = None
 
 contacts = {}
-base_request = {}
 
 
 def login():
@@ -409,15 +404,28 @@ def check_login(uuid):
 
             r = s.get(redirect_uri, allow_redirects=False)
 
-            sid = re.search("<wxsid>(.*)</wxsid>", r.text)[1]
-            uin = re.search("<wxuin>(.*)</wxuin>", r.text)[1]
-
-            base_request.update({"Sid": sid, "Uin": int(uin)})
+            set_base_request(r.text)
 
             return True
 
         if code == "400":
             return False
+
+
+def set_base_request(xml):
+    root = parse_xml(xml)["error"]
+
+    global base_request
+
+    base_request = {"Sid": root["wxsid"], "Uin": int(root["wxuin"])}
+
+
+def parse(s):
+    return parse_xml(unescape(s))
+
+
+def parse_xml(xml):
+    return xmltodict.parse(xml)
 
 
 def init():
