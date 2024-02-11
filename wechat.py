@@ -13,6 +13,7 @@ from xml.sax.saxutils import unescape
 import qrcode
 import requests
 import xmltodict
+from fake_useragent import UserAgent
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
 
@@ -361,6 +362,10 @@ def monkey_patch(r, *args, **kwargs):
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
 s.hooks["response"] = monkey_patch
+
+ua = UserAgent()
+
+s.headers["User-Agent"] = ua.random
 
 user = None
 
