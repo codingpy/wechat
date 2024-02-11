@@ -470,11 +470,11 @@ def init_chats(user_names):
     if isinstance(user_names, str):
         user_names = user_names.split(",")
 
-    add_contacts(
-        batch_get_contacts(
-            [{"UserName": user_name} for user_name in user_names if user_name]
-        )
-    )
+    users = [
+        {"UserName": user_name} for user_name in user_names if user_name not in contacts
+    ]
+
+    add_contacts(batch_get_contacts(users))
 
 
 def batch_get_contacts(users):
