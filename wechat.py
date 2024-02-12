@@ -294,19 +294,19 @@ class Msg(Base):
 
         if self.msg_type == MsgType.APP:
             if self.app_msg_type == AppMsgType.URL:
-                self.xml = parse(content)
+                self.xml = parse_xml(unescape(content))
             elif self.app_msg_type == AppMsgType.REALTIME_SHARE_LOCATION:
-                self.xml = parse(content)
+                self.xml = parse_xml(unescape(content))
         elif self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
-                self.xml = parse(content)
+                self.xml = parse_xml(unescape(content))
             elif self.sub_msg_type == MsgType.LOCATION:
                 self.location_desc, location_url = content.split(":\n")
                 self.location_url = self.url or location_url
 
                 self.xml = parse_xml(self.ori_content)
         elif self.msg_type == MsgType.RECALLED:
-            self.xml = parse(content)
+            self.xml = parse_xml(unescape(content))
 
 
 def is_me(user_name):
@@ -423,14 +423,6 @@ def set_base_request(xml):
     global base_request
 
     base_request = {"Sid": root["wxsid"], "Uin": int(root["wxuin"])}
-
-
-def parse(s):
-    return parse_xml(unescape(s))
-
-
-def parse_xml(xml):
-    return xmltodict.parse(xml)
 
 
 def init():
@@ -600,18 +592,25 @@ def send_app(title, total_len, attach_id, to_user_name):
         {
             "ToUserName": to_user_name,
             "Type": AppMsgType.ATTACH,
-            "Content": (
-                f"<appmsg>"
-                f"  <title>{title}</title>"
-                f"  <type>{AppMsgType.ATTACH}</type>"
-                f"  <appattach>"
-                f"    <totallen>{total_len}</totallen>"
-                f"    <attachid>{attach_id}</attachid>"
-                f"  </appattach>"
-                f"</appmsg>"
+            "Content": to_xml(
+                {
+                    "appmsg": {
+                        "title": title,
+                        "type": AppMsgType.ATTACH.value,
+                        "appattach": {"totallen": total_len, "attachid": attach_id},
+                    }
+                }
             ),
         },
     )
+
+
+def parse_xml(xml):
+    return xmltodict.parse(xml)
+
+
+def to_xml(d):
+    return xmltodict.unparse(d, full_document=False)
 
 
 def send_emoticon(media_id, to_user_name):
