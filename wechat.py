@@ -56,6 +56,7 @@ class AppMsgType(IntEnum):
     URL = 5
     ATTACH = 6
     REALTIME_SHARE_LOCATION = 17
+    TRANSFERS = 2000
 
 
 class MediaType(IntEnum):
@@ -293,9 +294,14 @@ class Msg(Base):
                 content = m[2]
 
         if self.msg_type == MsgType.APP:
-            if self.app_msg_type == AppMsgType.URL:
+            if self.app_msg_type in (
+                AppMsgType.URL,
+                AppMsgType.TRANSFERS,
+                AppMsgType.REALTIME_SHARE_LOCATION,
+            ):
                 self.xml = parse_xml(unescape(content))
-            elif self.app_msg_type == AppMsgType.REALTIME_SHARE_LOCATION:
+        elif self.msg_type == MsgType.EMOTICON:
+            if not self.has_product_id:
                 self.xml = parse_xml(unescape(content))
         elif self.msg_type == MsgType.TEXT:
             if is_news_app(self.from_user_name):
