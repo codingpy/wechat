@@ -432,8 +432,7 @@ def set_base_request(xml):
 
 
 def init():
-    r = s.post("/cgi-bin/mmwebwx-bin/webwxinit", json={"BaseRequest": {}})
-    content = r.json()
+    content = post_json("/cgi-bin/mmwebwx-bin/webwxinit", {})
 
     sync_key = content["SyncKey"]
     set_user_info(content["User"])
@@ -477,13 +476,10 @@ def init_chats(user_names):
 
 
 def batch_get_contacts(users):
-    r = s.post(
+    return post_json(
         "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
-        json={"BaseRequest": {}, "Count": len(users), "List": users},
-    )
-    content = r.json()
-
-    return content["ContactList"]
+        {"Count": len(users), "List": users},
+    )["ContactList"]
 
 
 def check_msg(sync_key):
@@ -516,11 +512,7 @@ def check_msg(sync_key):
         msgs = []
 
         if m[2] != "0":
-            r = s.post(
-                "/cgi-bin/mmwebwx-bin/webwxsync",
-                json={"BaseRequest": {}, "SyncKey": sync_key},
-            )
-            content = r.json()
+            content = post_json("/cgi-bin/mmwebwx-bin/webwxsync", {"SyncKey": sync_key})
 
             sync_check_key = content["SyncCheckKey"]
             sync_key = content["SyncKey"]
@@ -630,27 +622,23 @@ def send_emoticon(media_id, to_user_name):
 def post_msg(url, msg):
     client_msg_id = time.time_ns()
 
-    payload = {
-        "BaseRequest": base_request,
-        "Msg": {
-            "ClientMsgId": client_msg_id,
-            "LocalID": client_msg_id,
-            "FromUserName": user.user_name,
-            **msg,
+    return post_json(
+        url,
+        {
+            "Msg": {
+                "ClientMsgId": client_msg_id,
+                "LocalID": client_msg_id,
+                "FromUserName": user.user_name,
+                **msg,
+            }
         },
-    }
-
-    r = s.post(url, data=json.dumps(payload, ensure_ascii=False).encode())
-    content = r.json()
-
-    return content["MsgID"]
+    )["MsgID"]
 
 
 def revoke(svr_msg_id, to_user_name):
-    s.post(
+    post_json(
         "/cgi-bin/mmwebwx-bin/webwxrevokemsg",
-        json={
-            "BaseRequest": {},
+        {
             "SvrMsgId": svr_msg_id,
             "ToUserName": to_user_name,
             "ClientMsgId": time.time_ns(),
@@ -659,19 +647,15 @@ def revoke(svr_msg_id, to_user_name):
 
 
 def notify(code, to_user_name):
-    r = s.post(
+    return post_json(
         "/cgi-bin/mmwebwx-bin/webwxstatusnotify",
-        json={
-            "BaseRequest": {},
+        {
             "Code": code,
             "FromUserName": user.user_name,
             "ToUserName": to_user_name,
             "ClientMsgId": time.time_ns(),
         },
-    )
-    content = r.json()
-
-    return content["MsgID"]
+    )["MsgID"]
 
 
 def upload(path, to_user_name):
@@ -757,3 +741,21 @@ def download(url, path=None, **kwargs):
     r = s.get(url, stream=True, **kwargs)
 
     return stream.stream_response_to_file(r, path)
+
+
+def create_chat_room(members, topic=""):
+    return post_json(
+        "/cgi-bin/mmwebwx-bin/webwxcreatechatroom",
+        {"MemberCount": len(members), "MemberList": members, "Topic": topic},
+    )["ChatRoomName"]
+
+
+def post_json(url, data):
+    payload = {"BaseRequest": base_request, **data}
+
+    r = s.post(
+        url,
+        data=json.dumps(payload, ensure_ascii=False).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    return r.json()
