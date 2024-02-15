@@ -466,7 +466,8 @@ def init_chats(user_names):
         {"UserName": user_name} for user_name in user_names if user_name not in contacts
     ]
 
-    add_contacts(batch_get_contacts(users))
+    if users:
+        add_contacts(batch_get_contacts(users))
 
 
 def batch_get_contacts(users):
