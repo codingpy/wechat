@@ -187,6 +187,8 @@ class Contact(UserWithPinyinBase):
         self.is_file_helper = is_file_helper(self.user_name)
         self.is_news_app = is_news_app(self.user_name)
 
+        self.display_name = self.remark_name or self.nick_name
+
     @property
     def is_black(self):
         return bool(self.contact_flag & ContactFlag.BLACKLIST)
@@ -214,7 +216,8 @@ class Contact(UserWithPinyinBase):
         d = self.coerce(d)
 
         for key, value in d.items():
-            setattr(self, key, value)
+            if value:
+                setattr(self, key, value)
 
 
 @dataclass
