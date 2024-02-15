@@ -759,3 +759,10 @@ def post_json(url, data):
         headers={"Content-Type": "application/json"},
     )
     return r.json()
+
+
+def check_url(url):
+    r = s.get(f"/cgi-bin/mmwebwx-bin/webwxcheckurl?requrl={url}", allow_redirects=False)
+    content = r.json()
+
+    return content["FullURL"]
