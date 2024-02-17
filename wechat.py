@@ -281,9 +281,6 @@ class Msg(Base):
         self.is_room = is_room_contact(self.peer_user_name)
 
         if self.msg_type == MsgType.STATUS_NOTIFY:
-            if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
-                init_chats(self.status_notify_user_name)
-
             return
 
         content = render(self.content)
@@ -470,25 +467,6 @@ def set_user_info(user_info):
     user = User.create(user_info)
 
 
-def init_chats(user_names):
-    if isinstance(user_names, str):
-        user_names = user_names.split(",")
-
-    users = [
-        {"UserName": user_name} for user_name in user_names if user_name not in contacts
-    ]
-
-    if users:
-        add_contacts(batch_get_contacts(users))
-
-
-def batch_get_contacts(users):
-    return post_json(
-        "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
-        {"Count": len(users), "List": users},
-    )["ContactList"]
-
-
 def check_msg(sync_key):
     sync_check_key = sync_key
 
@@ -527,9 +505,47 @@ def check_msg(sync_key):
             add_contacts(content["ModContactList"])
             del_contacts(content["DelContactList"])
 
-            msgs = content["AddMsgList"]
+            msgs = process_msgs(content["AddMsgList"])
 
         yield msgs
+
+
+def process_msgs(msgs):
+    res = []
+
+    status_notify_user_names = []
+
+    for msg in msgs:
+        m = Msg.create(msg)
+
+        if m.status_notify_code == StatusNotifyCode.SYNC_CONV:
+            status_notify_user_names.append(m.status_notify_user_name)
+
+        res.append(m)
+
+    if status_notify_user_names:
+        init_chats(",".join(status_notify_user_names))
+
+    return res
+
+
+def init_chats(user_names):
+    if isinstance(user_names, str):
+        user_names = user_names.split(",")
+
+    users = [
+        {"UserName": user_name} for user_name in user_names if user_name not in contacts
+    ]
+
+    if users:
+        add_contacts(batch_get_contacts(users))
+
+
+def batch_get_contacts(users):
+    return post_json(
+        "/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
+        {"Count": len(users), "List": users},
+    )["ContactList"]
 
 
 def add_contacts(contacts):
