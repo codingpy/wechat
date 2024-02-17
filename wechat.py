@@ -125,20 +125,25 @@ class UserWithPinyinBase(UserBase):
 
 
 @dataclass
-class User(UserWithPinyinBase):
-    uin: int
-    head_img_url: str
-    remark_name: str
+class UserInfoBase(UserWithPinyinBase):
+    head_img_url: str = field(repr=False)
+    remark_name: str = field(repr=False)
+
     hide_input_bar_flag: int
     star_friend: int
+    app_account_flag: int
+    contact_flag: int
+    sns_flag: int
+
+
+@dataclass
+class User(UserInfoBase):
+    uin: int
     sex: int
     signature: str
-    app_account_flag: int
     verify_flag: int
-    contact_flag: int
     web_wx_plugin_switch: int
     head_img_flag: int
-    sns_flag: int
 
 
 @dataclass
@@ -151,26 +156,19 @@ class Member(UserWithPinyinBase):
 
 
 @dataclass
-class Contact(UserWithPinyinBase):
+class Contact(UserInfoBase):
     uin: int
-    head_img_url: str
-    contact_flag: int
     member_count: int
     member_list: list[Member]
-    remark_name: str
-    hide_input_bar_flag: int
     sex: int
     signature: str
     verify_flag: int
     owner_uin: int
-    star_friend: int
-    app_account_flag: int
     statues: int
     attr_status: int
     province: str
     city: str
     alias: str
-    sns_flag: int
     uni_friend: int
     display_name: str
     chat_room_id: int
