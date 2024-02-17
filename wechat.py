@@ -759,6 +759,47 @@ def create_chat_room(members, topic=""):
     )["ChatRoomName"]
 
 
+def add_members(chat_room_name, members):
+    if not isinstance(members, str):
+        members = ",".join(members)
+
+    update_chat_room(
+        "addmember", {"ChatRoomName": chat_room_name, "AddMemberList": members}
+    )
+
+
+def del_members(chat_room_name, members):
+    if not isinstance(members, str):
+        members = ",".join(members)
+
+    update_chat_room(
+        "delmember", {"ChatRoomName": chat_room_name, "DelMemberList": members}
+    )
+
+
+def invite_members(chat_room_name, members):
+    if not isinstance(members, str):
+        members = ",".join(members)
+
+    update_chat_room(
+        "invitemember", {"ChatRoomName": chat_room_name, "InviteMemberList": members}
+    )
+
+
+def quit_chat_room(chat_room_name):
+    update_chat_room("quitchatroom", {"ChatRoomName": chat_room_name})
+
+
+def mod_topic(chat_room_name, new_topic):
+    update_chat_room(
+        "modtopic", {"ChatRoomName": chat_room_name, "NewTopic": new_topic}
+    )
+
+
+def update_chat_room(fun, data):
+    post_json(f"/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun={fun}", data)
+
+
 def post_json(url, data):
     payload = {"BaseRequest": base_request, **data}
 
