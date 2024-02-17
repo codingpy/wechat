@@ -18,6 +18,7 @@ from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
 
 FILE_HELPER = "filehelper"
+RECOMMEND_HELPER = "fmessage"
 NEWS_APP = "newsapp"
 WEIXIN = "weixin"
 
@@ -185,6 +186,7 @@ class Contact(UserWithPinyinBase):
         self.is_me = is_me(self.user_name)
         self.is_room = is_room_contact(self.user_name)
         self.is_file_helper = is_file_helper(self.user_name)
+        self.is_recommend_helper = is_recommend_helper(self.user_name)
         self.is_news_app = is_news_app(self.user_name)
 
         self.display_name = self.remark_name or self.nick_name
@@ -328,6 +330,10 @@ def is_room_contact(user_name):
 
 def is_file_helper(user_name):
     return user_name == FILE_HELPER
+
+
+def is_recommend_helper(user_name):
+    return user_name == RECOMMEND_HELPER
 
 
 def is_news_app(user_name):
