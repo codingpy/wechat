@@ -357,7 +357,7 @@ def hexchr(x):
 class WeChatError(Exception): ...
 
 
-def monkey_patch(r, *args, **kwargs):
+def valid_json(r, *args, **kwargs):
     r.encoding = "utf-8"
 
     try:
@@ -377,7 +377,7 @@ def monkey_patch(r, *args, **kwargs):
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
-s.hooks["response"] = monkey_patch
+s.hooks["response"] = valid_json
 
 ua = UserAgent()
 
