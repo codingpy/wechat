@@ -64,6 +64,11 @@ class MediaType(IntEnum):
     ATTACHMENT = 4
 
 
+class CmdId(IntEnum):
+    MOD_REMARK_NAME = 2
+    TOP_CONTACT = 3
+
+
 @dataclass
 class Base:
     @classmethod
@@ -764,6 +769,24 @@ def download(url, path=None, **kwargs):
     r = s.get(url, stream=True, **kwargs)
 
     return stream.stream_response_to_file(r, path)
+
+
+def mod_remark_name(user_name, remark_name):
+    oplog(
+        {
+            "UserName": user_name,
+            "CmdId": CmdId.MOD_REMARK_NAME,
+            "RemarkName": remark_name,
+        }
+    )
+
+
+def set_top_contact(user_name, op):
+    oplog({"UserName": user_name, "CmdId": CmdId.TOP_CONTACT, "OP": op})
+
+
+def oplog(data):
+    post_json("/cgi-bin/mmwebwx-bin/webwxoplog", data)
 
 
 def create_chat_room(members, topic=""):
