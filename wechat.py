@@ -43,6 +43,7 @@ class MsgType(IntEnum):
     LOCATION = 48
     APP = 49
     STATUS_NOTIFY = 51
+    VOIP_INVITE = 53
     SYS = 10000
     RECALLED = 10002
 
