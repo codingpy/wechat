@@ -37,6 +37,7 @@ class MsgType(IntEnum):
     TEXT = 1
     IMAGE = 3
     VOICE = 34
+    SHARE_CARD = 42
     VIDEO = 43
     EMOTICON = 47
     LOCATION = 48
@@ -192,8 +193,6 @@ class Contact(UserInfoBase):
         self.is_recommend_helper = is_recommend_helper(self.user_name)
         self.is_news_app = is_news_app(self.user_name)
 
-        self.display_name = self.remark_name or self.nick_name
-
     @property
     def is_black(self):
         return bool(self.contact_flag & ContactFlag.BLACKLIST)
@@ -318,6 +317,12 @@ class Msg(Base):
                 self.xml = parse_xml(self.ori_content)
         elif self.msg_type == MsgType.RECALLED:
             self.xml = parse_xml(unescape(content))
+        elif self.msg_type == MsgType.SHARE_CARD:
+            self.xml = parse_xml(unescape(content))
+
+            self.recommend_info.head_img_url = get_head_img_url(
+                self.recommend_info.user_name
+            )
 
 
 def is_me(user_name):
@@ -575,11 +580,22 @@ def add_contact(contact):
 
         contacts[user_name] = c
 
+    c.display_name = c.remark_name or c.nick_name
+
+    for m in c.member_list:
+        m.head_img_url = get_head_img_url(
+            m.user_name, chat_room_id=c.encry_chat_room_id
+        )
+
 
 def del_contact(contact):
     user_name = contact["UserName"]
 
     del contacts[user_name]
+
+
+def get_head_img_url(user_name, chat_room_id=""):
+    return f"/cgi-bin/mmwebwx-bin/webwxgeticon?username={user_name}&chatroomid={chat_room_id}"
 
 
 def logout():
