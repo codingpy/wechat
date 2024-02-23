@@ -217,6 +217,42 @@ class Contact(UserInfoBase):
     def has_photo_album(self):
         return bool(self.sns_flag & 1)
 
+    def send(self, content):
+        return send(content, self.user_name)
+
+    def send_img(self, path="", media_id=""):
+        if not media_id:
+            media_id = self.upload(path)
+
+        return send_img(media_id, self.user_name)
+
+    def send_video(self, path="", media_id=""):
+        if not media_id:
+            media_id = self.upload(path)
+
+        return send_video(media_id, self.user_name)
+
+    def send_app(self, path="", title="", total_len=0, attach_id=""):
+        if not attach_id:
+            if not title:
+                title = os.path.basename(path)
+
+            if not total_len:
+                total_len = os.path.getsize(path)
+
+            attach_id = self.upload(path)
+
+        return send_app(title, total_len, attach_id, self.user_name)
+
+    def send_emoticon(self, path="", media_id=""):
+        if not media_id:
+            media_id = self.upload(path)
+
+        return send_emoticon(media_id, self.user_name)
+
+    def upload(self, path):
+        return upload(path, self.user_name)
+
     def update(self, d):
         d = self.coerce(d)
 
