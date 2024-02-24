@@ -121,6 +121,9 @@ class UserBase(Base):
     user_name: str
     nick_name: str
 
+    def notify(self, code):
+        return notify(code, self.user_name)
+
 
 @dataclass
 class UserWithPinyinBase(UserBase):
@@ -151,9 +154,6 @@ class User(UserInfoBase):
     verify_flag: int
     web_wx_plugin_switch: int
     head_img_flag: int
-
-    def notify(self, code):
-        return notify(code, self.user_name)
 
 
 @dataclass
