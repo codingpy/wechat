@@ -152,6 +152,9 @@ class User(UserInfoBase):
     web_wx_plugin_switch: int
     head_img_flag: int
 
+    def notify(self, code):
+        return notify(code, self.user_name)
+
 
 @dataclass
 class Member(UserWithPinyinBase):
@@ -249,6 +252,9 @@ class Contact(UserInfoBase):
             media_id = self.upload(path)
 
         return send_emoticon(media_id, self.user_name)
+
+    def revoke(self, svr_msg_id):
+        revoke(svr_msg_id, self.user_name)
 
     def upload(self, path):
         return upload(path, self.user_name)
@@ -490,7 +496,7 @@ def init():
     add_contacts(content["ContactList"])
     init_chats(content["ChatSet"])
 
-    notify(StatusNotifyCode.INITED, user.user_name)
+    user.notify(StatusNotifyCode.INITED)
 
     seq = 0
 
