@@ -126,18 +126,7 @@ class UserBase(Base):
 
 
 @dataclass
-class UserPinyinMixin:
-    uin: int = field(repr=False)
-
-    py_initial: str = field(repr=False)
-    py_quan_pin: str = field(repr=False)
-
-    remark_py_initial: str = field(repr=False)
-    remark_py_quan_pin: str = field(repr=False)
-
-
-@dataclass
-class UserInfoBase(UserBase, UserPinyinMixin):
+class UserInfoBase(UserBase):
     head_img_url: str = field(repr=False)
     remark_name: str = field(repr=False)
 
@@ -150,6 +139,7 @@ class UserInfoBase(UserBase, UserPinyinMixin):
 
 @dataclass
 class User(UserInfoBase):
+    uin: int
     sex: int
     signature: str
     verify_flag: int
@@ -158,7 +148,7 @@ class User(UserInfoBase):
 
 
 @dataclass
-class Member(UserBase, UserPinyinMixin):
+class Member(UserBase):
     attr_status: int
     member_status: int
     display_name: str
