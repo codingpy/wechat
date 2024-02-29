@@ -417,11 +417,9 @@ s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 s.hooks["response"] = valid_json
 
 ua = UserAgent()
-
 s.headers["User-Agent"] = ua.random
 
 user = None
-
 contacts = {}
 
 
@@ -441,7 +439,6 @@ def login():
 
 def login_qr():
     r = s.get("https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb")
-
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
     print_qr(f"https://login.weixin.qq.com/l/{uuid}")
@@ -453,14 +450,12 @@ def login_qr():
 def check_login(uuid):
     while True:
         r = s.get(f"https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}")
-
         code = re.search("window.code=(\d+)", r.text)[1]
 
         if code == "200":
             redirect_uri = re.search('window.redirect_uri="(.*)"', r.text)[1]
 
             r = s.get(redirect_uri, allow_redirects=False)
-
             set_base_request(r.text)
 
             return True
@@ -496,7 +491,6 @@ def init():
         add_contacts(content["MemberList"])
 
         seq = content["Seq"]
-
         if seq == 0:
             break
 
@@ -554,7 +548,6 @@ def check_msg(sync_key):
 
 def process_msgs(msgs):
     res = []
-
     status_notify_user_names = []
 
     for msg in msgs:
@@ -578,7 +571,6 @@ def init_chats(user_names):
     users = [
         {"UserName": user_name} for user_name in user_names if user_name not in contacts
     ]
-
     if users:
         add_contacts(batch_get_contacts(users))
 
@@ -605,11 +597,9 @@ def add_contact(contact):
 
     if user_name in contacts:
         c = contacts[user_name]
-
         c.update(contact)
     else:
         c = Contact.create(contact)
-
         contacts[user_name] = c
 
     c.display_name = c.remark_name or c.nick_name
@@ -806,7 +796,6 @@ def get_video(msg_id, path):
 
 def get_media(media_id, path):
     filename = os.path.basename(path)
-
     download(
         f"https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?mediaid={media_id}&encryfilename={filename}",
         path,
@@ -815,7 +804,6 @@ def get_media(media_id, path):
 
 def download(url, path=None, **kwargs):
     r = s.get(url, stream=True, **kwargs)
-
     return stream.stream_response_to_file(r, path)
 
 
