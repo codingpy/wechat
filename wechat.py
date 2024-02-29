@@ -755,6 +755,7 @@ def upload(path, to_user_name):
                 "StartPos": 0,
                 "DataLen": total_len,
                 "MediaType": MediaType.ATTACHMENT,
+                "FromUserName": user.user_name,
                 "ToUserName": to_user_name,
             }
         )
