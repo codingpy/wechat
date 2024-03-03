@@ -157,7 +157,6 @@ class Member(UserBase):
 
 @dataclass
 class Contact(UserInfoBase):
-    member_count: int
     member_list: list[Member]
     sex: int
     signature: str
@@ -247,6 +246,14 @@ class Contact(UserInfoBase):
 
     def upload(self, path):
         return upload(path, self.user_name)
+
+    def add_members(self, members):
+        user_names = [m.user_name for m in members]
+
+        if len(self.member_list) + len(user_names) < 40:
+            add_members(self.user_name, user_names)
+        else:
+            invite_members(self.user_name, user_names)
 
     def update(self, d):
         d = self.coerce(d)
