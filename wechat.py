@@ -227,7 +227,6 @@ class Contact(UserInfoBase):
         if not attach_id:
             if not title:
                 title = os.path.basename(path)
-
             if not total_len:
                 total_len = os.path.getsize(path)
 
@@ -318,9 +317,7 @@ class Msg(Base):
 
     def __post_init__(self):
         self.is_send = is_me(self.from_user_name)
-
         self.peer_user_name = self.to_user_name if self.is_send else self.from_user_name
-
         self.is_room = is_room_contact(self.peer_user_name)
 
         if self.msg_type == MsgType.STATUS_NOTIFY:
@@ -333,7 +330,6 @@ class Msg(Base):
 
             if m:
                 self.sender = m[1]
-
                 content = m[2]
 
         if self.msg_type == MsgType.APP:
@@ -390,7 +386,6 @@ def is_weixin(user_name):
 
 def render(s):
     s = s.replace("<br/>", "\n")
-
     return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
 
 
@@ -475,7 +470,6 @@ def set_base_request(xml):
     root = parse_xml(xml)["error"]
 
     global base_request
-
     base_request = {"Sid": root["wxsid"], "Uin": int(root["wxuin"])}
 
 
@@ -490,7 +484,6 @@ def init():
     user.notify(StatusNotifyCode.INITED)
 
     seq = 0
-
     while True:
         r = s.get(f"/cgi-bin/mmwebwx-bin/webwxgetcontact?seq={seq}")
         content = r.json()
@@ -506,7 +499,6 @@ def init():
 
 def set_user_info(user_info):
     global user
-
     user = User.create(user_info)
 
 
@@ -732,8 +724,6 @@ def notify(code, to_user_name):
 
 
 def upload(path, to_user_name):
-    chunk_size = int(0.5 * 1024 * 1024)
-
     filename = os.path.basename(path)
 
     ctype, encoding = mimetypes.guess_type(path)
@@ -767,6 +757,7 @@ def upload(path, to_user_name):
             }
         )
 
+        chunk_size = int(0.5 * 1024 * 1024)
         chunks = math.ceil(total_len / chunk_size)
 
         for chunk in range(chunks):
