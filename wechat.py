@@ -478,6 +478,8 @@ def init():
 
     sync_key = content["SyncKey"]
     set_user_info(content["User"])
+
+    contacts.clear()
     add_contacts(content["ContactList"])
     init_chats(content["ChatSet"])
 
