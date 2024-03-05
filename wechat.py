@@ -384,15 +384,6 @@ def is_weixin(user_name):
     return user_name == WEIXIN
 
 
-def render(s):
-    s = s.replace("<br/>", "\n")
-    return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
-
-
-def hexchr(x):
-    return chr(int(x, base=16))
-
-
 class WeChatError(Exception): ...
 
 
@@ -603,9 +594,10 @@ def add_contact(contact):
         c = Contact.create(contact)
         contacts[user_name] = c
 
-    c.display_name = c.remark_name or c.nick_name
+    c.display_name = render(c.remark_name or c.nick_name)
 
     for m in c.member_list:
+        m.display_name = render(m.display_name)
         m.head_img_url = get_head_img_url(
             m.user_name, chat_room_id=c.encry_chat_room_id
         )
@@ -615,6 +607,15 @@ def del_contact(contact):
     user_name = contact["UserName"]
 
     del contacts[user_name]
+
+
+def render(s):
+    s = s.replace("<br/>", "\n")
+    return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
+
+
+def hexchr(x):
+    return chr(int(x, base=16))
 
 
 def get_head_img_url(user_name, chat_room_id=""):
