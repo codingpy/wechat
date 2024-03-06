@@ -610,8 +610,16 @@ def del_contact(contact):
 
 
 def render(s):
+    def repl(m):
+        code = m[1]
+
+        if "2320e3" <= code <= "3920e3":
+            return hexchr(code[:2]) + "\ufe0f\u20e3"  # keycap
+
+        return hexchr(code)
+
     s = s.replace("<br/>", "\n")
-    return re.sub('<span class="emoji emoji(.*?)"></span>', lambda m: hexchr(m[1]), s)
+    return re.sub('<span class="emoji emoji(.*?)"></span>', repl, s)
 
 
 def hexchr(x):
