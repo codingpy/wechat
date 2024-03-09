@@ -485,7 +485,7 @@ def init():
         if seq == 0:
             break
 
-    return check_msg(sync_key)
+    return sync(sync_key)
 
 
 def set_user_info(user_info):
@@ -493,7 +493,7 @@ def set_user_info(user_info):
     user = User.create(user_info)
 
 
-def check_msg(sync_key):
+def sync(sync_key):
     sync_check_key = sync_key
 
     while True:
