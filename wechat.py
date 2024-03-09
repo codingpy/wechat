@@ -311,7 +311,6 @@ class Msg(Base):
     sub_msg_type: int
     new_msg_id: int
     ori_content: str
-    encry_file_name: str
 
     def __post_init__(self):
         self.is_send = is_me(self.from_user_name)
