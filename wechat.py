@@ -241,6 +241,9 @@ class Contact(UserInfoBase):
     def revoke(self, svr_msg_id):
         revoke(svr_msg_id, self.user_name)
 
+    def mark_as_read(self):
+        return self.notify(StatusNotifyCode.READED)
+
     def upload(self, path):
         return upload(path, self.user_name)
 
