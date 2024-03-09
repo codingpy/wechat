@@ -128,11 +128,8 @@ class UserBase(Base):
 @dataclass
 class UserInfoBase(UserBase):
     head_img_url: str = field(repr=False)
-    remark_name: str = field(repr=False)
 
     hide_input_bar_flag: int
-    star_friend: int
-    app_account_flag: int
     contact_flag: int
     sns_flag: int
 
@@ -142,6 +139,7 @@ class User(UserInfoBase):
     uin: int
     sex: int
     signature: str
+    app_account_flag: int
     verify_flag: int
     web_wx_plugin_switch: int
     head_img_flag: int
@@ -157,19 +155,19 @@ class Member(UserBase):
 
 @dataclass
 class Contact(UserInfoBase):
-    member_list: list[Member]
+    member_list: list[Member] = field(repr=False)
+    remark_name: str = field(repr=False)
+
     sex: int
     signature: str
     verify_flag: int
-    owner_uin: int
+    star_friend: int
     statues: int
     attr_status: int
     province: str
     city: str
     alias: str
-    uni_friend: int
     display_name: str
-    chat_room_id: int
     key_word: str
     encry_chat_room_id: str
     is_owner: int
