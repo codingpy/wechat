@@ -357,6 +357,18 @@ class Msg(Base):
                 self.recommend_info.user_name
             )
 
+    def get_img(self, path):
+        get_img(self.msg_id, path)
+
+    def get_voice(self, path):
+        get_voice(self.msg_id, path)
+
+    def get_video(self, path):
+        get_video(self.msg_id, path)
+
+    def get_media(self, path):
+        get_media(self.media_id, path)
+
 
 def is_me(user_name):
     return user_name == user.user_name
