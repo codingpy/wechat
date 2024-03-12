@@ -121,14 +121,17 @@ class UserBase(Base):
     user_name: str
     nick_name: str
 
+    head_img_url: str = field(default="", repr=False)
+
     def notify(self, code):
         return notify(code, self.user_name)
+
+    def get_head_img(self, path):
+        download(self.head_img_url, path)
 
 
 @dataclass
 class UserInfoBase(UserBase):
-    head_img_url: str = field(repr=False)
-
     hide_input_bar_flag: int
     contact_flag: int
     sns_flag: int
