@@ -56,6 +56,8 @@ class StatusNotifyCode(IntEnum):
 
 
 class AppMsgType(IntEnum):
+    AUDIO = 3
+    VIDEO = 4
     URL = 5
     ATTACH = 6
     REALTIME_SHARE_LOCATION = 17
@@ -335,32 +337,29 @@ class Msg(Base):
                 self.sender = m[1]
                 content = m[2]
 
-        if self.msg_type == MsgType.APP:
-            if self.app_msg_type in (
-                AppMsgType.URL,
-                AppMsgType.TRANSFERS,
-                AppMsgType.REALTIME_SHARE_LOCATION,
-            ):
-                self.xml = parse_xml(unescape(content))
-        elif self.msg_type == MsgType.EMOTICON:
-            if not self.has_product_id:
-                self.xml = parse_xml(unescape(content))
-        elif self.msg_type == MsgType.TEXT:
-            if is_news_app(self.from_user_name):
-                self.xml = parse_xml(unescape(content))
-            elif self.sub_msg_type == MsgType.LOCATION:
-                self.location_desc, location_url = content.split(":\n")
-                self.location_url = self.url or location_url
+        match self.msg_type:
+            case MsgType.APP:
+                if self.app_msg_type in AppMsgType:
+                    self.xml = parse_xml(unescape(content))
+            case MsgType.EMOTICON:
+                if not self.has_product_id:
+                    self.xml = parse_xml(unescape(content))
+            case MsgType.TEXT:
+                if is_news_app(self.from_user_name):
+                    self.xml = parse_xml(unescape(content))
+                elif self.sub_msg_type == MsgType.LOCATION:
+                    self.location_desc, location_url = content.split(":\n")
+                    self.location_url = self.url or location_url
 
-                self.xml = parse_xml(self.ori_content)
-        elif self.msg_type == MsgType.RECALLED:
-            self.xml = parse_xml(unescape(content))
-        elif self.msg_type == MsgType.SHARE_CARD:
-            self.xml = parse_xml(unescape(content))
+                    self.xml = parse_xml(self.ori_content)
+            case MsgType.RECALLED:
+                self.xml = parse_xml(unescape(content))
+            case MsgType.SHARE_CARD:
+                self.xml = parse_xml(unescape(content))
 
-            self.recommend_info.head_img_url = get_head_img_url(
-                self.recommend_info.user_name
-            )
+                self.recommend_info.head_img_url = get_head_img_url(
+                    self.recommend_info.user_name
+                )
 
     def get_img(self, path):
         get_img(self.msg_id, path)
