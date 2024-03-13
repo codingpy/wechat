@@ -328,38 +328,40 @@ class Msg(Base):
         if self.msg_type == MsgType.STATUS_NOTIFY:
             return
 
-        content = render(self.content)
+        x = render(self.content)
 
         if self.is_room:
-            m = re.search("^(@[a-z0-9]*):\n(.*)", content)
+            m = re.search("^(@[a-z0-9]*):\n(.*)", x)
 
             if m:
                 self.sender = m[1]
-                content = m[2]
+                x = m[2]
 
         match self.msg_type:
             case MsgType.APP:
                 if self.app_msg_type in AppMsgType:
-                    self.xml = parse_xml(unescape(content))
+                    x = parse_xml(unescape(x))
             case MsgType.EMOTICON:
                 if not self.has_product_id:
-                    self.xml = parse_xml(unescape(content))
+                    x = parse_xml(unescape(x))
             case MsgType.TEXT:
                 if is_news_app(self.from_user_name):
-                    self.xml = parse_xml(unescape(content))
+                    x = parse_xml(unescape(x))
                 elif self.sub_msg_type == MsgType.LOCATION:
-                    self.location_desc, location_url = content.split(":\n")
+                    self.location_desc, location_url = x.split(":\n")
                     self.location_url = self.url or location_url
 
-                    self.xml = parse_xml(self.ori_content)
+                    self.ori_content = parse_xml(self.ori_content)
             case MsgType.RECALLED:
-                self.xml = parse_xml(unescape(content))
+                x = parse_xml(unescape(x))
             case MsgType.SHARE_CARD:
-                self.xml = parse_xml(unescape(content))
+                x = parse_xml(unescape(x))
 
                 self.recommend_info.head_img_url = get_head_img_url(
                     self.recommend_info.user_name
                 )
+
+        self.content = x
 
     def get_img(self, path):
         get_img(self.msg_id, path)
