@@ -123,7 +123,7 @@ class UserBase(Base):
     user_name: str
     nick_name: str
 
-    head_img_url: str = field(default="", repr=False)
+    head_img_url: str = field(default="", repr=False, kw_only=True)
 
     def notify(self, code):
         return notify(code, self.user_name)
