@@ -654,7 +654,17 @@ def hexchr(x):
 
 
 def get_head_img_url(user_name, chat_room_id=""):
-    return f"/cgi-bin/mmwebwx-bin/webwxgeticon?username={user_name}&chatroomid={chat_room_id}"
+    if is_room_contact(user_name):
+        url = "/cgi-bin/mmwebwx-bin/webwxgetheadimg"
+    else:
+        url = "/cgi-bin/mmwebwx-bin/webwxgeticon"
+
+    url += f"?username={user_name}"
+
+    if chat_room_id:
+        url += f"&chatroomid={chat_room_id}"
+
+    return url
 
 
 def logout():
