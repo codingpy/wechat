@@ -88,4 +88,61 @@ def response_mock():
             },
         )
 
+        m.post(
+            "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
+            json={
+                "BaseResponse": {"Ret": 0, "ErrMsg": ""},
+                "ContactList": [
+                    {
+                        "UserName": "@@a206ff4c10541070ed74bd5a4affd0388f6f69cca36b37b08a40dc9b544bdbf0",
+                        "NickName": "drivera",
+                        "HeadImgUrl": "/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=@@a206ff4c10541070ed74bd5a4affd0388f6f69cca36b37b08a40dc9b544bdbf0",
+                        "ContactFlag": 2,
+                        "MemberList": [
+                            {
+                                "UserName": "@5adfb4b10e294fe7ddee1e4f7af82f9ada0db851877461a8a2ac4bf6b3f37c5b",
+                                "NickName": "rochaerin",
+                                "AttrStatus": 16879713,
+                                "MemberStatus": 0,
+                                "DisplayName": "",
+                                "KeyWord": "",
+                            },
+                            {
+                                "UserName": "@2021f2673fd5389e82f9916db3909824c397c856461418a1bb7b8b4ed8c062b0",
+                                "NickName": "smitholivia",
+                                "AttrStatus": 99711,
+                                "MemberStatus": 0,
+                                "DisplayName": "",
+                                "KeyWord": "sxf",
+                            },
+                            {
+                                "UserName": "@bc8caea848b60ff68b0449faa9c8d065f36876a8c8b114d9cdc562a9f18fe49e",
+                                "NickName": "udavis",
+                                "AttrStatus": 33656933,
+                                "MemberStatus": 0,
+                                "DisplayName": "Matthew Washington",
+                                "KeyWord": "",
+                            },
+                        ],
+                        "RemarkName": "",
+                        "HideInputBarFlag": 0,
+                        "Sex": 0,
+                        "Signature": "",
+                        "VerifyFlag": 0,
+                        "StarFriend": 0,
+                        "Statues": 0,
+                        "AttrStatus": 0,
+                        "Province": "",
+                        "City": "",
+                        "Alias": "",
+                        "SnsFlag": 0,
+                        "DisplayName": "",
+                        "KeyWord": "",
+                        "EncryChatRoomId": "@e619b0e9ed8896ea8f523e105ac5bd2c",
+                        "IsOwner": 0,
+                    }
+                ],
+            },
+        )
+
         yield m
