@@ -326,6 +326,9 @@ class Msg(Base):
         self.is_room = is_room_contact(self.peer_user_name)
 
         if self.msg_type == MsgType.STATUS_NOTIFY:
+            if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
+                init_chats(self.status_notify_user_name)
+
             return
 
         x = render(self.content)
@@ -431,6 +434,9 @@ s.headers["User-Agent"] = ua.random
 user = None
 contacts = {}
 
+chats = []
+users = []
+
 
 def login():
     if user:
@@ -503,6 +509,8 @@ def init():
         if seq == 0:
             break
 
+    batch_add_contacts()
+
     return sync(sync_key)
 
 
@@ -551,36 +559,34 @@ def sync(sync_key):
 
             msgs = process_msgs(content["AddMsgList"])
 
+            batch_add_contacts()
+
         yield msgs
 
 
 def process_msgs(msgs):
-    res = []
-    status_notify_user_names = []
-
-    for msg in msgs:
-        m = Msg.create(msg)
-
-        if m.status_notify_code == StatusNotifyCode.SYNC_CONV:
-            status_notify_user_names.append(m.status_notify_user_name)
-
-        res.append(m)
-
-    if status_notify_user_names:
-        init_chats(",".join(status_notify_user_names))
-
-    return res
+    return list(map(Msg.create, msgs))
 
 
 def init_chats(user_names):
     if isinstance(user_names, str):
         user_names = user_names.split(",")
 
-    users = [
-        {"UserName": user_name} for user_name in user_names if user_name not in contacts
-    ]
+    chats.clear()
+
+    for user_name in user_names:
+        if user_name:
+            chats.append(user_name)
+
+            if user_name not in contacts:
+                users.append({"UserName": user_name})
+
+
+def batch_add_contacts():
     if users:
         add_contacts(batch_get_contacts(users))
+
+        users.clear()
 
 
 def batch_get_contacts(users):
@@ -612,11 +618,15 @@ def add_contact(contact):
 
     c.display_name = render(c.remark_name or c.nick_name)
 
-    for m in c.member_list:
-        m.display_name = render(m.display_name)
-        m.head_img_url = get_head_img_url(
-            m.user_name, chat_room_id=c.encry_chat_room_id
-        )
+    if c.is_room:
+        if c.member_list:
+            for m in c.member_list:
+                m.display_name = render(m.display_name)
+                m.head_img_url = get_head_img_url(
+                    m.user_name, chat_room_id=c.encry_chat_room_id
+                )
+        else:
+            users.append({"UserName": c.user_name})
 
 
 def del_contact(contact):
