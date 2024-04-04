@@ -110,7 +110,6 @@ class Base:
 
 def get_dataclass_hints(class_or_instance):
     hints = typing.get_type_hints(class_or_instance)
-
     return {field.name: hints[field.name] for field in fields(class_or_instance)}
 
 
@@ -585,7 +584,6 @@ def init_chats(user_names):
 def batch_add_contacts():
     if users:
         add_contacts(batch_get_contacts(users))
-
         users.clear()
 
 
@@ -641,7 +639,6 @@ def render(s):
 
         if is_keycap(code):
             return hexchr(code[:2]) + "\ufe0f\u20e3"
-
         if is_flag(code):
             return hexchr(code[:5]) + hexchr(code[5:])
 
@@ -829,8 +826,7 @@ def upload(path, to_user_name):
                     "uploadmediarequest": upload_media_request,
                 },
             )
-
-    content = r.json()
+            content = r.json()
 
     return content["MediaId"]
 
@@ -933,12 +929,11 @@ def update_chat_room(fun, data):
 def post_json(url, data):
     payload = {"BaseRequest": base_request, **data}
 
-    r = s.post(
+    return s.post(
         url,
         data=json.dumps(payload, ensure_ascii=False).encode(),
         headers={"Content-Type": "application/json"},
-    )
-    return r.json()
+    ).json()
 
 
 def check_url(url):
