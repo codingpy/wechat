@@ -180,36 +180,6 @@ class Contact(UserInfoBase):
     contact_type: int = 0
     chat_room_owner: str = ""
 
-    def __post_init__(self):
-        self.is_me = is_me(self.user_name)
-        self.is_room = is_room_contact(self.user_name)
-        self.is_file_helper = is_file_helper(self.user_name)
-        self.is_recommend_helper = is_recommend_helper(self.user_name)
-        self.is_news_app = is_news_app(self.user_name)
-
-    @property
-    def is_black(self):
-        return bool(self.contact_flag & ContactFlag.BLACKLIST)
-
-    @property
-    def is_brand(self):
-        return bool(self.verify_flag & VerifyFlag.BIZ_BRAND)
-
-    @property
-    def is_muted(self):
-        if self.is_room:
-            return self.statues == 0
-        else:
-            return bool(self.contact_flag & ContactFlag.NOTIFY_CLOSE)
-
-    @property
-    def is_top(self):
-        return bool(self.contact_flag & ContactFlag.TOP)
-
-    @property
-    def has_photo_album(self):
-        return bool(self.sns_flag & 1)
-
     def send(self, content):
         return send(content, self.user_name)
 
@@ -376,30 +346,6 @@ class Msg(Base):
 
     def get_media(self, path):
         get_media(self.media_id, path)
-
-
-def is_me(user_name):
-    return user_name == user.user_name
-
-
-def is_room_contact(user_name):
-    return user_name.startswith("@@")
-
-
-def is_file_helper(user_name):
-    return user_name == FILE_HELPER
-
-
-def is_recommend_helper(user_name):
-    return user_name == RECOMMEND_HELPER
-
-
-def is_news_app(user_name):
-    return user_name == NEWS_APP
-
-
-def is_weixin(user_name):
-    return user_name == WEIXIN
 
 
 class WeChatError(Exception): ...
@@ -614,6 +560,19 @@ def add_contact(contact):
         c = Contact.create(contact)
         contacts[user_name] = c
 
+        c.is_room = is_room_contact(user_name)
+        c.is_file_helper = is_file_helper(user_name)
+        c.is_recommend_helper = is_recommend_helper(user_name)
+        c.is_news_app = is_news_app(user_name)
+
+    c.is_black = bool(c.contact_flag & ContactFlag.BLACKLIST)
+    c.is_brand = bool(c.verify_flag & VerifyFlag.BIZ_BRAND)
+    c.is_muted = bool(
+        c.statues == 0 if c.is_room else c.contact_flag & ContactFlag.NOTIFY_CLOSE
+    )
+    c.is_top = bool(c.contact_flag & ContactFlag.TOP)
+    c.has_photo_album = bool(c.sns_flag & 1)
+
     c.display_name = render(c.remark_name or c.nick_name)
 
     if c.is_room:
@@ -624,7 +583,7 @@ def add_contact(contact):
                     m.user_name, chat_room_id=c.encry_chat_room_id
                 )
         else:
-            users.append({"UserName": c.user_name})
+            users.append({"UserName": user_name})
 
 
 def del_contact(contact):
@@ -672,6 +631,30 @@ def get_head_img_url(user_name, chat_room_id=""):
         url += f"&chatroomid={chat_room_id}"
 
     return url
+
+
+def is_me(user_name):
+    return user_name == user.user_name
+
+
+def is_room_contact(user_name):
+    return user_name.startswith("@@")
+
+
+def is_file_helper(user_name):
+    return user_name == FILE_HELPER
+
+
+def is_recommend_helper(user_name):
+    return user_name == RECOMMEND_HELPER
+
+
+def is_news_app(user_name):
+    return user_name == NEWS_APP
+
+
+def is_weixin(user_name):
+    return user_name == WEIXIN
 
 
 def logout():
