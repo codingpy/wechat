@@ -89,6 +89,47 @@ def response_mock():
         )
 
         m.post(
+            "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify",
+            json={
+                "BaseResponse": {"Ret": 0, "ErrMsg": ""},
+                "MsgID": "2518347772561648129",
+            },
+        )
+
+        m.get(
+            "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?seq=0",
+            json={
+                "BaseResponse": {"Ret": 0, "ErrMsg": ""},
+                "MemberList": [
+                    {
+                        "UserName": "@@255f17df1bd8a28b7f165fa894b387368cedaf09a6f9782bb42479cd9ae4c8a7",
+                        "NickName": "shannon70",
+                        "HeadImgUrl": "/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=@@255f17df1bd8a28b7f165fa894b387368cedaf09a6f9782bb42479cd9ae4c8a7",
+                        "ContactFlag": 3,
+                        "MemberList": [],
+                        "RemarkName": "",
+                        "HideInputBarFlag": 0,
+                        "Sex": 0,
+                        "Signature": "",
+                        "VerifyFlag": 0,
+                        "StarFriend": 0,
+                        "Statues": 0,
+                        "AttrStatus": 0,
+                        "Province": "",
+                        "City": "",
+                        "Alias": "",
+                        "SnsFlag": 0,
+                        "DisplayName": "",
+                        "KeyWord": "",
+                        "EncryChatRoomId": "",
+                        "IsOwner": 0,
+                    }
+                ],
+                "Seq": 0,
+            },
+        )
+
+        m.post(
             "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact",
             json={
                 "BaseResponse": {"Ret": 0, "ErrMsg": ""},
@@ -140,7 +181,55 @@ def response_mock():
                         "KeyWord": "",
                         "EncryChatRoomId": "@e619b0e9ed8896ea8f523e105ac5bd2c",
                         "IsOwner": 0,
-                    }
+                    },
+                    {
+                        "UserName": "@@255f17df1bd8a28b7f165fa894b387368cedaf09a6f9782bb42479cd9ae4c8a7",
+                        "NickName": "shannon70",
+                        "HeadImgUrl": "/cgi-bin/mmwebwx-bin/webwxgetheadimg?username=@@255f17df1bd8a28b7f165fa894b387368cedaf09a6f9782bb42479cd9ae4c8a7",
+                        "ContactFlag": 3,
+                        "MemberList": [
+                            {
+                                "UserName": "@0c1490eb5b1c530edcedae6a2743684f94841e1c8383c83b4b570aea77f8f344",
+                                "NickName": "rachel57",
+                                "AttrStatus": 102501,
+                                "MemberStatus": 0,
+                                "DisplayName": "Aaron Lyons",
+                                "KeyWord": "",
+                            },
+                            {
+                                "UserName": "@bc8caea848b60ff68b0449faa9c8d065f36876a8c8b114d9cdc562a9f18fe49e",
+                                "NickName": "udavis",
+                                "AttrStatus": 33656933,
+                                "MemberStatus": 0,
+                                "DisplayName": "Matthew Washington",
+                                "KeyWord": "",
+                            },
+                            {
+                                "UserName": "@034e501512199a6b35911fe26abebea9bd4a965302b416ecbe2be458f499a10e",
+                                "NickName": "cody96",
+                                "AttrStatus": 102589,
+                                "MemberStatus": 0,
+                                "DisplayName": "",
+                                "KeyWord": "",
+                            },
+                        ],
+                        "RemarkName": "",
+                        "HideInputBarFlag": 0,
+                        "Sex": 0,
+                        "Signature": "",
+                        "VerifyFlag": 0,
+                        "StarFriend": 0,
+                        "Statues": 0,
+                        "AttrStatus": 0,
+                        "Province": "",
+                        "City": "",
+                        "Alias": "",
+                        "SnsFlag": 0,
+                        "DisplayName": "",
+                        "KeyWord": "",
+                        "EncryChatRoomId": "@7452d30159d65cb1411e2f5463ebbd69",
+                        "IsOwner": 0,
+                    },
                 ],
             },
         )
