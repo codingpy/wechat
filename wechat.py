@@ -459,6 +459,7 @@ def process_msgs(msgs):
 
             continue
 
+        M.sender = M.from_user_name
         x = render(M.content)
 
         if M.is_room:
@@ -612,7 +613,6 @@ def get_head_img_url(user_name, chat_room_id=""):
         url = "/cgi-bin/mmwebwx-bin/webwxgeticon"
 
     url += f"?username={user_name}"
-
     if chat_room_id:
         url += f"&chatroomid={chat_room_id}"
 
