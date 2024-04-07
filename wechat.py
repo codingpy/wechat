@@ -73,17 +73,9 @@ class CmdId(IntEnum):
     TOP_CONTACT = 3
 
 
-@dataclass
 class Base:
-    @classmethod
-    def create(cls, d):
-        return cls(**cls.coerce(d))
-
-    @classmethod
-    def coerce(cls, d):
-        res = {}
-
-        hints = get_dataclass_hints(cls)
+    def update(self, d):
+        hints = get_dataclass_hints(self)
 
         for key, value in d.items():
             key = to_snake(key)
@@ -91,21 +83,16 @@ class Base:
             if key in hints:
                 typ = hints[key]
 
-                if issubclass(typ, Base):
-                    value = typ.create(value)
+                if typing.get_origin(typ) is list:
+                    args = typing.get_args(typ)
+                    if args:
+                        value = list(map(args[0], value))
                 else:
-                    if typing.get_origin(typ) is list:
-                        args = typing.get_args(typ)
+                    value = typ(value)
 
-                        if args:
-                            arg = args[0]
+                setattr(self, key, value)
 
-                            if issubclass(arg, Base):
-                                value = list(map(arg.create, value))
-
-                res[key] = value
-
-        return res
+    __init__ = update
 
 
 def get_dataclass_hints(class_or_instance):
@@ -117,12 +104,12 @@ def to_snake(s):
     return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
-@dataclass
+@dataclass(init=False)
 class UserBase(Base):
     user_name: str
     nick_name: str
 
-    head_img_url: str = field(default="", repr=False, kw_only=True)
+    head_img_url: str = field(default="", repr=False)
 
     def notify(self, code):
         return notify(code, self.user_name)
@@ -131,14 +118,14 @@ class UserBase(Base):
         download(self.head_img_url, path)
 
 
-@dataclass
+@dataclass(init=False)
 class UserInfoBase(UserBase):
     hide_input_bar_flag: int
     contact_flag: int
     sns_flag: int
 
 
-@dataclass
+@dataclass(init=False)
 class User(UserInfoBase):
     uin: int
     sex: int
@@ -149,7 +136,7 @@ class User(UserInfoBase):
     head_img_flag: int
 
 
-@dataclass
+@dataclass(init=False)
 class Member(UserBase):
     attr_status: int
     member_status: int
@@ -157,7 +144,7 @@ class Member(UserBase):
     key_word: str
 
 
-@dataclass
+@dataclass(init=False)
 class Contact(UserInfoBase):
     member_list: list[Member] = field(repr=False)
     remark_name: str = field(repr=False)
@@ -229,15 +216,8 @@ class Contact(UserInfoBase):
         else:
             invite_members(self.user_name, user_names)
 
-    def update(self, d):
-        d = self.coerce(d)
 
-        for key, value in d.items():
-            if value:
-                setattr(self, key, value)
-
-
-@dataclass
+@dataclass(init=False)
 class RecommendInfo(UserBase):
     qq_num: int
     province: str
@@ -253,13 +233,13 @@ class RecommendInfo(UserBase):
     op_code: int
 
 
-@dataclass
+@dataclass(init=False)
 class AppInfo(Base):
     app_id: str
     type: int
 
 
-@dataclass
+@dataclass(init=False)
 class Msg(Base):
     msg_id: str
     from_user_name: str
@@ -415,7 +395,7 @@ def init():
 
 def set_user_info(user_info):
     global user
-    user = User.create(user_info)
+    user = User(user_info)
 
 
 def sync(sync_key):
@@ -467,7 +447,7 @@ def process_msgs(msgs):
     res = []
 
     for msg in msgs:
-        M = Msg.create(msg)
+        M = Msg(msg)
 
         M.is_send = is_me(M.from_user_name)
         M.peer_user_name = M.to_user_name if M.is_send else M.from_user_name
@@ -563,7 +543,7 @@ def add_contact(contact):
         c = contacts[user_name]
         c.update(contact)
     else:
-        c = Contact.create(contact)
+        c = Contact(contact)
         contacts[user_name] = c
 
         c.is_room = is_room_contact(user_name)
