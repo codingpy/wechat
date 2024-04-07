@@ -289,52 +289,6 @@ class Msg(Base):
     new_msg_id: int
     ori_content: str
 
-    def __post_init__(self):
-        self.is_send = is_me(self.from_user_name)
-        self.peer_user_name = self.to_user_name if self.is_send else self.from_user_name
-        self.is_room = is_room_contact(self.peer_user_name)
-
-        if self.msg_type == MsgType.STATUS_NOTIFY:
-            if self.status_notify_code == StatusNotifyCode.SYNC_CONV:
-                init_chats(self.status_notify_user_name)
-
-            return
-
-        x = render(self.content)
-
-        if self.is_room:
-            m = re.search("^(@[a-z0-9]*):\n(.*)", x)
-
-            if m:
-                self.sender = m[1]
-                x = m[2]
-
-        match self.msg_type:
-            case MsgType.APP:
-                if self.app_msg_type in AppMsgType:
-                    x = parse_xml(unescape(x))
-            case MsgType.EMOTICON:
-                if not self.has_product_id:
-                    x = parse_xml(unescape(x))
-            case MsgType.TEXT:
-                if is_news_app(self.from_user_name):
-                    x = parse_xml(unescape(x))
-                elif self.sub_msg_type == MsgType.LOCATION:
-                    self.location_desc, location_url = x.split(":\n")
-                    self.location_url = self.url or location_url
-
-                    self.ori_content = parse_xml(self.ori_content)
-            case MsgType.RECALLED:
-                x = parse_xml(unescape(x))
-            case MsgType.SHARE_CARD:
-                x = parse_xml(unescape(x))
-
-                self.recommend_info.head_img_url = get_head_img_url(
-                    self.recommend_info.user_name
-                )
-
-        self.content = x
-
     def get_img(self, path):
         get_img(self.msg_id, path)
 
@@ -510,7 +464,59 @@ def sync(sync_key):
 
 
 def process_msgs(msgs):
-    return list(map(Msg.create, msgs))
+    res = []
+
+    for msg in msgs:
+        M = Msg.create(msg)
+
+        M.is_send = is_me(M.from_user_name)
+        M.peer_user_name = M.to_user_name if M.is_send else M.from_user_name
+        M.is_room = is_room_contact(M.peer_user_name)
+
+        if M.msg_type == MsgType.STATUS_NOTIFY:
+            if M.status_notify_code == StatusNotifyCode.SYNC_CONV:
+                init_chats(M.status_notify_user_name)
+
+            continue
+
+        x = render(M.content)
+
+        if M.is_room:
+            m = re.search("^(@[a-z0-9]*):\n(.*)", x)
+
+            if m:
+                M.sender = m[1]
+                x = m[2]
+
+        match M.msg_type:
+            case MsgType.APP:
+                if M.app_msg_type in AppMsgType:
+                    x = parse_xml(unescape(x))
+            case MsgType.EMOTICON:
+                if not M.has_product_id:
+                    x = parse_xml(unescape(x))
+            case MsgType.TEXT:
+                if is_news_app(M.from_user_name):
+                    x = parse_xml(unescape(x))
+                elif M.sub_msg_type == MsgType.LOCATION:
+                    M.location_desc, location_url = x.split(":\n")
+                    M.location_url = M.url or location_url
+
+                    M.ori_content = parse_xml(M.ori_content)
+            case MsgType.RECALLED:
+                x = parse_xml(unescape(x))
+            case MsgType.SHARE_CARD:
+                x = parse_xml(unescape(x))
+
+                M.recommend_info.head_img_url = get_head_img_url(
+                    M.recommend_info.user_name
+                )
+
+        M.content = x
+
+        res.append(M)
+
+    return res
 
 
 def init_chats(user_names):
