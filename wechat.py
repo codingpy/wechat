@@ -685,14 +685,6 @@ def send_app(title, total_len, attach_id, to_user_name):
     )
 
 
-def parse_xml(xml):
-    return xmltodict.parse(xml)
-
-
-def to_xml(d):
-    return xmltodict.unparse(d, full_document=False)
-
-
 def send_emoticon(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
@@ -714,6 +706,14 @@ def post_msg(url, msg):
             }
         },
     )["MsgID"]
+
+
+def parse_xml(xml):
+    return xmltodict.parse(xml)
+
+
+def to_xml(d):
+    return xmltodict.unparse(d, full_document=False)
 
 
 def revoke(svr_msg_id, to_user_name):
