@@ -75,13 +75,13 @@ class CmdId(IntEnum):
 
 class Base:
     def update(self, d):
-        hints = get_dataclass_hints(self)
+        types = {field.name: field.type for field in fields(self)}
 
         for key, value in d.items():
             key = to_snake(key)
 
-            if key in hints:
-                typ = hints[key]
+            if key in types:
+                typ = types[key]
 
                 if typing.get_origin(typ) is list:
                     args = typing.get_args(typ)
@@ -93,11 +93,6 @@ class Base:
                 setattr(self, key, value)
 
     __init__ = update
-
-
-def get_dataclass_hints(class_or_instance):
-    hints = typing.get_type_hints(class_or_instance)
-    return {field.name: hints[field.name] for field in fields(class_or_instance)}
 
 
 def to_snake(s):
