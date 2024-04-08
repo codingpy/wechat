@@ -451,44 +451,41 @@ def process_msgs(msgs):
         if M.msg_type == MsgType.STATUS_NOTIFY:
             if M.status_notify_code == StatusNotifyCode.SYNC_CONV:
                 init_chats(M.status_notify_user_name)
+        else:
+            M.sender = M.from_user_name
+            x = render(M.content)
 
-            continue
+            if M.is_room:
+                m = re.search("^(@[a-z0-9]*):\n(.*)", x)
+                if m:
+                    M.sender = m[1]
+                    x = m[2]
 
-        M.sender = M.from_user_name
-        x = render(M.content)
+            match M.msg_type:
+                case MsgType.APP:
+                    if M.app_msg_type in AppMsgType:
+                        x = parse_xml(unescape(x))
+                case MsgType.EMOTICON:
+                    if not M.has_product_id:
+                        x = parse_xml(unescape(x))
+                case MsgType.TEXT:
+                    if is_news_app(M.from_user_name):
+                        x = parse_xml(unescape(x))
+                    elif M.sub_msg_type == MsgType.LOCATION:
+                        M.location_desc, location_url = x.split(":\n")
+                        M.location_url = M.url or location_url
 
-        if M.is_room:
-            m = re.search("^(@[a-z0-9]*):\n(.*)", x)
-
-            if m:
-                M.sender = m[1]
-                x = m[2]
-
-        match M.msg_type:
-            case MsgType.APP:
-                if M.app_msg_type in AppMsgType:
+                        M.ori_content = parse_xml(M.ori_content)
+                case MsgType.RECALLED:
                     x = parse_xml(unescape(x))
-            case MsgType.EMOTICON:
-                if not M.has_product_id:
+                case MsgType.SHARE_CARD:
                     x = parse_xml(unescape(x))
-            case MsgType.TEXT:
-                if is_news_app(M.from_user_name):
-                    x = parse_xml(unescape(x))
-                elif M.sub_msg_type == MsgType.LOCATION:
-                    M.location_desc, location_url = x.split(":\n")
-                    M.location_url = M.url or location_url
 
-                    M.ori_content = parse_xml(M.ori_content)
-            case MsgType.RECALLED:
-                x = parse_xml(unescape(x))
-            case MsgType.SHARE_CARD:
-                x = parse_xml(unescape(x))
+                    M.recommend_info.head_img_url = get_head_img_url(
+                        M.recommend_info.user_name
+                    )
 
-                M.recommend_info.head_img_url = get_head_img_url(
-                    M.recommend_info.user_name
-                )
-
-        M.content = x
+            M.content = x
 
         res.append(M)
 
