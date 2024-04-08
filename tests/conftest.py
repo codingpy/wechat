@@ -12,12 +12,12 @@ def response_mock():
         uin = 1217252163
 
         m.get(
-            "https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb",
+            "https://login.wx2.qq.com/jslogin?appid=wx782c26e4c19acffb",
             body=f'window.QRLogin.code = 200; window.QRLogin.uuid = "{uuid}"',
         )
 
         m.get(
-            f"https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}",
+            f"https://login.wx2.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}",
             body="window.code=201;",
         )
         m.get(

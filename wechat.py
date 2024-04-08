@@ -327,7 +327,7 @@ def login():
 
 
 def login_qr():
-    r = s.get("https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb")
+    r = s.get("https://login.wx2.qq.com/jslogin?appid=wx782c26e4c19acffb")
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
     print_qr(f"https://login.weixin.qq.com/l/{uuid}")
@@ -338,7 +338,7 @@ def login_qr():
 
 def check_login(uuid):
     while True:
-        r = s.get(f"https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}")
+        r = s.get(f"https://login.wx2.qq.com/cgi-bin/mmwebwx-bin/login?uuid={uuid}")
         code = re.search("window.code=(\d+)", r.text)[1]
 
         if code == "200":
