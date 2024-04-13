@@ -108,14 +108,7 @@ class UserBase(Base):
 
 
 @dataclass(init=False)
-class UserInfoBase(UserBase):
-    hide_input_bar_flag: int
-    contact_flag: int
-    sns_flag: int
-
-
-@dataclass(init=False)
-class User(UserInfoBase):
+class User(UserBase):
     uin: int
     sex: int
     signature: str
@@ -123,6 +116,7 @@ class User(UserInfoBase):
     verify_flag: int
     web_wx_plugin_switch: int
     head_img_flag: int
+    sns_flag: int
 
 
 @dataclass(init=False)
@@ -134,7 +128,8 @@ class Member(UserBase):
 
 
 @dataclass(init=False)
-class Contact(UserInfoBase):
+class Contact(UserBase):
+    contact_flag: int
     member_list: list[Member] = field(repr=False)
     remark_name: str = field(repr=False)
 
@@ -147,6 +142,7 @@ class Contact(UserInfoBase):
     province: str
     city: str
     alias: str
+    sns_flag: int
     display_name: str
     key_word: str
     encry_chat_room_id: str
