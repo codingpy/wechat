@@ -112,10 +112,6 @@ class User(UserBase):
     uin: int
     sex: int
     signature: str
-    app_account_flag: int
-    verify_flag: int
-    web_wx_plugin_switch: int
-    head_img_flag: int
     sns_flag: int
 
 
