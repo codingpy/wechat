@@ -26,7 +26,7 @@ WEIXIN = "weixin"
 class ContactFlag(IntFlag):
     BLACKLIST = 8
     NOTIFY_CLOSE = 0x200
-    TOP = 0x800
+    TOP_CONTACT = 0x800
 
 
 class VerifyFlag(IntFlag):
@@ -105,12 +105,6 @@ class UserBase(Base):
     nick_name: str
 
     head_img_url: str = field(default="", repr=False)
-
-    def notify(self, code):
-        return notify(code, self.user_name)
-
-    def get_head_img(self, path):
-        download(self.head_img_url, path)
 
 
 @dataclass(init=False)
@@ -198,7 +192,7 @@ class Contact(UserInfoBase):
         revoke(svr_msg_id, self.user_name)
 
     def mark_as_read(self):
-        return self.notify(StatusNotifyCode.READED)
+        return notify(StatusNotifyCode.READED, self.user_name)
 
     def upload(self, path):
         return upload(path, self.user_name)
@@ -370,7 +364,7 @@ def init():
     add_contacts(content["ContactList"])
     init_chats(content["ChatSet"])
 
-    user.notify(StatusNotifyCode.INITED)
+    notify(StatusNotifyCode.INITED, user.user_name)
 
     seq = 0
     while True:
@@ -549,7 +543,7 @@ def add_contact(contact):
     c.is_muted = bool(
         c.statues == 0 if c.is_room else c.contact_flag & ContactFlag.NOTIFY_CLOSE
     )
-    c.is_top = bool(c.contact_flag & ContactFlag.TOP)
+    c.is_top = bool(c.contact_flag & ContactFlag.TOP_CONTACT)
     c.has_photo_album = bool(c.sns_flag & 1)
 
     c.display_name = render(c.remark_name or c.nick_name)
