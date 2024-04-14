@@ -104,15 +104,14 @@ class UserBase(Base):
     user_name: str
     nick_name: str
 
-    head_img_url: str = field(default="", repr=False)
-
 
 @dataclass(init=False)
 class User(UserBase):
     uin: int
+    head_img_url: str = field(repr=False)
     sex: int
     signature: str
-    sns_flag: int
+    sns_flag: int = field(repr=False)
 
 
 @dataclass(init=False)
@@ -125,21 +124,21 @@ class Member(UserBase):
 
 @dataclass(init=False)
 class Contact(UserBase):
-    contact_flag: int
+    head_img_url: str = field(repr=False)
+    contact_flag: int = field(repr=False)
     member_list: list[Member] = field(repr=False)
     remark_name: str = field(repr=False)
-
     sex: int
     signature: str
-    verify_flag: int
+    verify_flag: int = field(repr=False)
     star_friend: int
     statues: int
-    attr_status: int
+    attr_status: int = field(repr=False)
     province: str
     city: str
-    sns_flag: int
+    sns_flag: int = field(repr=False)
     display_name: str
-    key_word: str
+    key_word: str = field(repr=False)
     encry_chat_room_id: str
     is_owner: int
 
