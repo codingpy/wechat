@@ -137,15 +137,12 @@ class Contact(UserBase):
     attr_status: int
     province: str
     city: str
-    alias: str
     sns_flag: int
     display_name: str
     key_word: str
     encry_chat_room_id: str
     is_owner: int
 
-    head_img_update_flag: int = 0
-    contact_type: int = 0
     chat_room_owner: str = ""
 
     def send(self, content):
