@@ -262,7 +262,7 @@ class Msg(Base):
 class WeChatError(Exception): ...
 
 
-def valid_json(r, *args, **kwargs):
+def raise_for_json(r, *args, **kwargs):
     r.encoding = "utf-8"
 
     try:
@@ -282,7 +282,7 @@ def valid_json(r, *args, **kwargs):
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
 
-s.hooks["response"] = valid_json
+s.hooks["response"] = raise_for_json
 
 ua = UserAgent()
 s.headers["User-Agent"] = ua.random
