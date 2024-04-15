@@ -281,11 +281,7 @@ def raise_for_json(r, *args, **kwargs):
 
 
 s = sessions.BaseUrlSession(base_url="https://wx2.qq.com")
-
 s.hooks["response"] = raise_for_json
-
-ua = UserAgent()
-s.headers["User-Agent"] = ua.random
 
 user = None
 contacts = {}
@@ -309,6 +305,9 @@ def login():
 
 
 def login_qr():
+    ua = UserAgent(platforms="pc")
+    s.headers["User-Agent"] = ua.random
+
     r = s.get("https://login.wx2.qq.com/jslogin?appid=wx782c26e4c19acffb")
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
