@@ -100,14 +100,10 @@ def to_snake(s):
 
 
 @dataclass(init=False)
-class UserBase(Base):
-    user_name: str
+class User(Base):
+    uin: int = field(repr=False)
+    user_name: str = field(repr=False)
     nick_name: str
-
-
-@dataclass(init=False)
-class User(UserBase):
-    uin: int
     head_img_url: str = field(repr=False)
     sex: int
     signature: str
@@ -115,7 +111,9 @@ class User(UserBase):
 
 
 @dataclass(init=False)
-class Member(UserBase):
+class Member(Base):
+    user_name: str = field(repr=False)
+    nick_name: str = field(repr=False)
     attr_status: int
     member_status: int
     display_name: str
@@ -123,7 +121,9 @@ class Member(UserBase):
 
 
 @dataclass(init=False)
-class Contact(UserBase):
+class Contact(Base):
+    user_name: str = field(repr=False)
+    nick_name: str = field(repr=False)
     head_img_url: str = field(repr=False)
     contact_flag: int = field(repr=False)
     member_list: list[Member] = field(repr=False)
@@ -132,17 +132,17 @@ class Contact(UserBase):
     signature: str
     verify_flag: int = field(repr=False)
     star_friend: int
-    statues: int
+    statues: int = field(repr=False)
     attr_status: int = field(repr=False)
     province: str
     city: str
     sns_flag: int = field(repr=False)
     display_name: str
     key_word: str = field(repr=False)
-    encry_chat_room_id: str
+    encry_chat_room_id: str = field(repr=False)
     is_owner: int
 
-    chat_room_owner: str = ""
+    chat_room_owner: str = field(default="", repr=False)
 
     def send(self, content):
         return send(content, self.user_name)
@@ -195,7 +195,9 @@ class Contact(UserBase):
 
 
 @dataclass(init=False)
-class RecommendInfo(UserBase):
+class RecommendInfo(Base):
+    user_name: str = field(repr=False)
+    nick_name: str
     qq_num: int
     province: str
     city: str
