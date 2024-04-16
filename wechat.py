@@ -113,16 +113,16 @@ class User(Base):
 @dataclass(init=False)
 class Member(Base):
     user_name: str = field(repr=False)
-    nick_name: str = field(repr=False)
-    attr_status: int
+    nick_name: str
+    attr_status: int = field(repr=False)
     display_name: str
-    key_word: str
+    key_word: str = field(repr=False)
 
 
 @dataclass(init=False)
 class Contact(Base):
     user_name: str = field(repr=False)
-    nick_name: str = field(repr=False)
+    nick_name: str
     head_img_url: str = field(repr=False)
     contact_flag: int = field(repr=False)
     member_list: list[Member] = field(repr=False)
