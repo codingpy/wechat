@@ -115,7 +115,6 @@ class Member(Base):
     user_name: str = field(repr=False)
     nick_name: str = field(repr=False)
     attr_status: int
-    member_status: int
     display_name: str
     key_word: str
 
