@@ -120,9 +120,7 @@ class Member(Base):
 
 
 @dataclass(init=False)
-class Contact(Base):
-    user_name: str = field(repr=False)
-    nick_name: str
+class Contact(Member):
     head_img_url: str = field(repr=False)
     contact_flag: int = field(repr=False)
     member_list: list[Member] = field(repr=False)
@@ -132,12 +130,9 @@ class Contact(Base):
     verify_flag: int = field(repr=False)
     star_friend: int
     statues: int = field(repr=False)
-    attr_status: int = field(repr=False)
     province: str
     city: str
     sns_flag: int = field(repr=False)
-    display_name: str
-    key_word: str = field(repr=False)
     encry_chat_room_id: str = field(repr=False)
     is_owner: int
 
