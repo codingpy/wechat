@@ -138,55 +138,6 @@ class Contact(Member):
 
     chat_room_owner: str = field(default="", repr=False)
 
-    def send(self, content):
-        return send(content, self.user_name)
-
-    def send_img(self, path="", media_id=""):
-        if not media_id:
-            media_id = self.upload(path)
-
-        return send_img(media_id, self.user_name)
-
-    def send_video(self, path="", media_id=""):
-        if not media_id:
-            media_id = self.upload(path)
-
-        return send_video(media_id, self.user_name)
-
-    def send_app(self, path="", title="", total_len=0, attach_id=""):
-        if not attach_id:
-            if not title:
-                title = os.path.basename(path)
-            if not total_len:
-                total_len = os.path.getsize(path)
-
-            attach_id = self.upload(path)
-
-        return send_app(title, total_len, attach_id, self.user_name)
-
-    def send_emoticon(self, path="", media_id=""):
-        if not media_id:
-            media_id = self.upload(path)
-
-        return send_emoticon(media_id, self.user_name)
-
-    def revoke(self, svr_msg_id):
-        revoke(svr_msg_id, self.user_name)
-
-    def mark_as_read(self):
-        return notify(StatusNotifyCode.READED, self.user_name)
-
-    def upload(self, path):
-        return upload(path, self.user_name)
-
-    def add_members(self, members):
-        user_names = [m.user_name for m in members]
-
-        if len(self.member_list) + len(user_names) < 40:
-            add_members(self.user_name, user_names)
-        else:
-            invite_members(self.user_name, user_names)
-
 
 @dataclass(init=False)
 class RecommendInfo(Base):
@@ -241,18 +192,6 @@ class Msg(Base):
     sub_msg_type: int
     new_msg_id: int
     ori_content: str
-
-    def get_img(self, path):
-        get_img(self.msg_id, path)
-
-    def get_voice(self, path):
-        get_voice(self.msg_id, path)
-
-    def get_video(self, path):
-        get_video(self.msg_id, path)
-
-    def get_media(self, path):
-        get_media(self.media_id, path)
 
 
 class WeChatError(Exception): ...
