@@ -239,6 +239,10 @@ def login():
     return login_qr()
 
 
+def logout():
+    s.post("/cgi-bin/mmwebwx-bin/webwxlogout")
+
+
 def login_qr():
     ua = UserAgent(platforms="pc")
     s.headers["User-Agent"] = ua.random
@@ -473,6 +477,7 @@ def add_contact(contact):
     if c.is_room:
         if c.member_list:
             for m in c.member_list:
+                m.is_me = is_me(m.user_name)
                 m.display_name = render(m.display_name)
                 m.head_img_url = get_head_img_url(
                     m.user_name, chat_room_id=c.encry_chat_room_id
@@ -549,10 +554,6 @@ def is_news_app(user_name):
 
 def is_weixin(user_name):
     return user_name == WEIXIN
-
-
-def logout():
-    s.post("/cgi-bin/mmwebwx-bin/webwxlogout")
 
 
 def print_qr(data):
@@ -703,9 +704,8 @@ def upload(path, to_user_name):
                     "uploadmediarequest": upload_media_request,
                 },
             )
-            content = r.json()
 
-    return content["MediaId"]
+    return r.json()["MediaId"]
 
 
 def get_img(msg_id, path):
