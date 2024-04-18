@@ -10,12 +10,12 @@ from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
 from xml.sax.saxutils import unescape
 
-import qrcode
 import requests
-import xmltodict
 from fake_useragent import UserAgent
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
+
+from wechat import utils
 
 FILE_HELPER = "filehelper"
 RECOMMEND_HELPER = "fmessage"
@@ -250,7 +250,7 @@ def login_qr():
     r = s.get("https://login.wx2.qq.com/jslogin?appid=wx782c26e4c19acffb")
     uuid = re.search('window.QRLogin.uuid = "(.*)"', r.text)[1]
 
-    print_qr(f"https://login.weixin.qq.com/l/{uuid}")
+    utils.print_qr(f"https://login.weixin.qq.com/l/{uuid}")
 
     if check_login(uuid):
         return init()
@@ -274,7 +274,7 @@ def check_login(uuid):
 
 
 def set_base_request(xml):
-    root = parse_xml(xml)["error"]
+    root = utils.parse_xml(xml)["error"]
 
     global base_request
     base_request = {"Sid": root["wxsid"], "Uin": int(root["wxuin"])}
@@ -384,22 +384,22 @@ def process_msgs(msgs):
             match M.msg_type:
                 case MsgType.APP:
                     if M.app_msg_type in AppMsgType:
-                        x = parse_xml(unescape(x))
+                        x = utils.parse_xml(unescape(x))
                 case MsgType.EMOTICON:
                     if not M.has_product_id:
-                        x = parse_xml(unescape(x))
+                        x = utils.parse_xml(unescape(x))
                 case MsgType.TEXT:
                     if is_news_app(M.from_user_name):
-                        x = parse_xml(unescape(x))
+                        x = utils.parse_xml(unescape(x))
                     elif M.sub_msg_type == MsgType.LOCATION:
                         M.location_desc, location_url = x.split(":\n")
                         M.location_url = M.url or location_url
 
-                        M.ori_content = parse_xml(M.ori_content)
+                        M.ori_content = utils.parse_xml(M.ori_content)
                 case MsgType.RECALLED:
-                    x = parse_xml(unescape(x))
+                    x = utils.parse_xml(unescape(x))
                 case MsgType.SHARE_CARD:
-                    x = parse_xml(unescape(x))
+                    x = utils.parse_xml(unescape(x))
 
                     M.recommend_info.head_img_url = get_head_img_url(
                         M.recommend_info.user_name
@@ -556,12 +556,6 @@ def is_weixin(user_name):
     return user_name == WEIXIN
 
 
-def print_qr(data):
-    qr = qrcode.QRCode()
-    qr.add_data(data)
-    qr.print_ascii()
-
-
 def send(content, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsg",
@@ -589,7 +583,7 @@ def send_app(title, total_len, attach_id, to_user_name):
         {
             "ToUserName": to_user_name,
             "Type": AppMsgType.ATTACH,
-            "Content": to_xml(
+            "Content": utils.to_xml(
                 {
                     "appmsg": {
                         "title": title,
@@ -623,14 +617,6 @@ def post_msg(url, msg):
             }
         },
     )["MsgID"]
-
-
-def parse_xml(xml):
-    return xmltodict.parse(xml)
-
-
-def to_xml(d):
-    return xmltodict.unparse(d, full_document=False)
 
 
 def revoke(svr_msg_id, to_user_name):
