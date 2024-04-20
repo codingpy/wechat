@@ -4,8 +4,6 @@ import mimetypes
 import os
 import re
 import time
-import typing
-from dataclasses import dataclass, field, fields
 from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
 from xml.sax.saxutils import unescape
@@ -15,7 +13,7 @@ from fake_useragent import UserAgent
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
 
-from wechat import utils
+from wechat import models, utils
 
 FILE_HELPER = "filehelper"
 RECOMMEND_HELPER = "fmessage"
@@ -71,127 +69,6 @@ class MediaType(IntEnum):
 class CmdId(IntEnum):
     MOD_REMARK_NAME = 2
     TOP_CONTACT = 3
-
-
-class Base:
-    def update(self, d):
-        types = {field.name: field.type for field in fields(self)}
-
-        for key, value in d.items():
-            key = to_snake(key)
-
-            if key in types:
-                typ = types[key]
-
-                if typing.get_origin(typ) is list:
-                    args = typing.get_args(typ)
-                    if args:
-                        value = list(map(args[0], value))
-                else:
-                    value = typ(value)
-
-                setattr(self, key, value)
-
-    __init__ = update
-
-
-def to_snake(s):
-    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
-
-
-@dataclass(init=False)
-class User(Base):
-    uin: int = field(repr=False)
-    user_name: str = field(repr=False)
-    nick_name: str
-    head_img_url: str = field(repr=False)
-    sex: int
-    signature: str
-    sns_flag: int = field(repr=False)
-
-
-@dataclass(init=False)
-class Member(Base):
-    user_name: str = field(repr=False)
-    nick_name: str
-    attr_status: int = field(repr=False)
-    display_name: str
-    key_word: str = field(repr=False)
-
-
-@dataclass(init=False)
-class Contact(Member):
-    head_img_url: str = field(repr=False)
-    contact_flag: int = field(repr=False)
-    member_list: list[Member] = field(repr=False)
-    remark_name: str = field(repr=False)
-    sex: int
-    signature: str
-    verify_flag: int = field(repr=False)
-    star_friend: int
-    statues: int = field(repr=False)
-    province: str
-    city: str
-    sns_flag: int = field(repr=False)
-    encry_chat_room_id: str = field(repr=False)
-    is_owner: int
-
-    chat_room_owner: str = field(default="", repr=False)
-
-
-@dataclass(init=False)
-class RecommendInfo(Base):
-    user_name: str = field(repr=False)
-    nick_name: str
-    qq_num: int
-    province: str
-    city: str
-    content: str
-    signature: str
-    alias: str
-    scene: int
-    verify_flag: int
-    attr_status: int
-    sex: int
-    ticket: str
-    op_code: int
-
-
-@dataclass(init=False)
-class AppInfo(Base):
-    app_id: str
-    type: int
-
-
-@dataclass(init=False)
-class Msg(Base):
-    msg_id: str
-    from_user_name: str
-    to_user_name: str
-    msg_type: int
-    content: str
-    status: int
-    img_status: int
-    create_time: int
-    voice_length: int
-    play_length: int
-    file_name: str
-    file_size: str
-    media_id: str
-    url: str
-    app_msg_type: int
-    status_notify_code: int
-    status_notify_user_name: str
-    recommend_info: RecommendInfo
-    forward_flag: int
-    app_info: AppInfo
-    has_product_id: int
-    ticket: str
-    img_height: int
-    img_width: int
-    sub_msg_type: int
-    new_msg_id: int
-    ori_content: str
 
 
 class WeChatError(Exception): ...
@@ -310,7 +187,7 @@ def init():
 
 def set_user_info(user_info):
     global user
-    user = User(user_info)
+    user = models.User(user_info)
 
 
 def sync(sync_key):
@@ -362,7 +239,7 @@ def process_msgs(msgs):
     res = []
 
     for msg in msgs:
-        M = Msg(msg)
+        M = models.Msg(msg)
 
         M.is_send = is_me(M.from_user_name)
         M.peer_user_name = M.to_user_name if M.is_send else M.from_user_name
@@ -456,7 +333,7 @@ def add_contact(contact):
         c = contacts[user_name]
         c.update(contact)
     else:
-        c = Contact(contact)
+        c = models.Contact(contact)
         contacts[user_name] = c
 
         c.is_room = is_room_contact(user_name)

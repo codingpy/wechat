@@ -1,5 +1,11 @@
+import re
+
 import qrcode
 import xmltodict
+
+
+def to_snake(s):
+    return re.sub("(?<=[^_])((?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z]))", "_", s).lower()
 
 
 def print_qr(data):
