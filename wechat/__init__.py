@@ -4,7 +4,6 @@ import mimetypes
 import os
 import re
 import time
-from enum import IntEnum, IntFlag
 from http.client import BadStatusLine
 from xml.sax.saxutils import unescape
 
@@ -13,62 +12,7 @@ from fake_useragent import UserAgent
 from requests_toolbelt import sessions
 from requests_toolbelt.downloadutils import stream
 
-from wechat import models, utils
-
-FILE_HELPER = "filehelper"
-RECOMMEND_HELPER = "fmessage"
-NEWS_APP = "newsapp"
-WEIXIN = "weixin"
-
-
-class ContactFlag(IntFlag):
-    BLACKLIST = 8
-    NOTIFY_CLOSE = 0x200
-    TOP_CONTACT = 0x800
-
-
-class VerifyFlag(IntFlag):
-    BIZ_BRAND = 8
-
-
-class MsgType(IntEnum):
-    TEXT = 1
-    IMAGE = 3
-    VOICE = 34
-    SHARE_CARD = 42
-    VIDEO = 43
-    EMOTICON = 47
-    LOCATION = 48
-    APP = 49
-    STATUS_NOTIFY = 51
-    VOIP_INVITE = 53
-    SYS = 10000
-    RECALLED = 10002
-
-
-class StatusNotifyCode(IntEnum):
-    READED = 1
-    ENTER_SESSION = 2
-    INITED = 3
-    SYNC_CONV = 4
-
-
-class AppMsgType(IntEnum):
-    AUDIO = 3
-    VIDEO = 4
-    URL = 5
-    ATTACH = 6
-    REALTIME_SHARE_LOCATION = 17
-    TRANSFERS = 2000
-
-
-class MediaType(IntEnum):
-    ATTACHMENT = 4
-
-
-class CmdId(IntEnum):
-    MOD_REMARK_NAME = 2
-    TOP_CONTACT = 3
+from wechat import consts, models, utils
 
 
 class WeChatError(Exception): ...
@@ -167,7 +111,7 @@ def init():
     add_contacts(content["ContactList"])
     init_chats(content["ChatSet"])
 
-    notify(StatusNotifyCode.INITED, user.user_name)
+    notify(consts.StatusNotifyCode.INITED, user.user_name)
 
     seq = 0
     while True:
@@ -245,8 +189,8 @@ def process_msgs(msgs):
         M.peer_user_name = M.to_user_name if M.is_send else M.from_user_name
         M.is_room = is_room_contact(M.peer_user_name)
 
-        if M.msg_type == MsgType.STATUS_NOTIFY:
-            if M.status_notify_code == StatusNotifyCode.SYNC_CONV:
+        if M.msg_type == consts.MsgType.STATUS_NOTIFY:
+            if M.status_notify_code == consts.StatusNotifyCode.SYNC_CONV:
                 init_chats(M.status_notify_user_name)
         else:
             M.sender = M.from_user_name
@@ -259,23 +203,23 @@ def process_msgs(msgs):
                     x = m[2]
 
             match M.msg_type:
-                case MsgType.APP:
-                    if M.app_msg_type in AppMsgType:
+                case consts.MsgType.APP:
+                    if M.app_msg_type in consts.AppMsgType:
                         x = utils.parse_xml(unescape(x))
-                case MsgType.EMOTICON:
+                case consts.MsgType.EMOTICON:
                     if not M.has_product_id:
                         x = utils.parse_xml(unescape(x))
-                case MsgType.TEXT:
+                case consts.MsgType.TEXT:
                     if is_news_app(M.from_user_name):
                         x = utils.parse_xml(unescape(x))
-                    elif M.sub_msg_type == MsgType.LOCATION:
+                    elif M.sub_msg_type == consts.MsgType.LOCATION:
                         M.location_desc, location_url = x.split(":\n")
                         M.location_url = M.url or location_url
 
                         M.ori_content = utils.parse_xml(M.ori_content)
-                case MsgType.RECALLED:
+                case consts.MsgType.RECALLED:
                     x = utils.parse_xml(unescape(x))
-                case MsgType.SHARE_CARD:
+                case consts.MsgType.SHARE_CARD:
                     x = utils.parse_xml(unescape(x))
 
                     M.recommend_info.head_img_url = get_head_img_url(
@@ -341,12 +285,12 @@ def add_contact(contact):
         c.is_recommend_helper = is_recommend_helper(user_name)
         c.is_news_app = is_news_app(user_name)
 
-    c.is_black = bool(c.contact_flag & ContactFlag.BLACKLIST)
-    c.is_brand = bool(c.verify_flag & VerifyFlag.BIZ_BRAND)
+    c.is_black = bool(c.contact_flag & consts.ContactFlag.BLACKLIST)
+    c.is_brand = bool(c.verify_flag & consts.VerifyFlag.BIZ_BRAND)
     c.is_muted = bool(
-        c.statues == 0 if c.is_room else c.contact_flag & ContactFlag.NOTIFY_CLOSE
+        not c.statues if c.is_room else c.contact_flag & consts.ContactFlag.NOTIFY_CLOSE
     )
-    c.is_top = bool(c.contact_flag & ContactFlag.TOP_CONTACT)
+    c.is_top = bool(c.contact_flag & consts.ContactFlag.TOP_CONTACT)
     c.has_photo_album = bool(c.sns_flag & 1)
 
     c.display_name = render(c.remark_name or c.nick_name)
@@ -418,39 +362,39 @@ def is_room_contact(user_name):
 
 
 def is_file_helper(user_name):
-    return user_name == FILE_HELPER
+    return user_name == consts.FILE_HELPER
 
 
 def is_recommend_helper(user_name):
-    return user_name == RECOMMEND_HELPER
+    return user_name == consts.RECOMMEND_HELPER
 
 
 def is_news_app(user_name):
-    return user_name == NEWS_APP
+    return user_name == consts.NEWS_APP
 
 
 def is_weixin(user_name):
-    return user_name == WEIXIN
+    return user_name == consts.WEIXIN
 
 
 def send(content, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsg",
-        {"ToUserName": to_user_name, "Type": MsgType.TEXT, "Content": content},
+        {"ToUserName": to_user_name, "Type": consts.MsgType.TEXT, "Content": content},
     )
 
 
 def send_img(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json",
-        {"ToUserName": to_user_name, "Type": MsgType.IMAGE, "MediaId": media_id},
+        {"ToUserName": to_user_name, "Type": consts.MsgType.IMAGE, "MediaId": media_id},
     )
 
 
 def send_video(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendvideomsg?f=json",
-        {"ToUserName": to_user_name, "Type": MsgType.VIDEO, "MediaId": media_id},
+        {"ToUserName": to_user_name, "Type": consts.MsgType.VIDEO, "MediaId": media_id},
     )
 
 
@@ -459,12 +403,12 @@ def send_app(title, total_len, attach_id, to_user_name):
         "/cgi-bin/mmwebwx-bin/webwxsendappmsg",
         {
             "ToUserName": to_user_name,
-            "Type": AppMsgType.ATTACH,
+            "Type": consts.AppMsgType.ATTACH,
             "Content": utils.to_xml(
                 {
                     "appmsg": {
                         "title": title,
-                        "type": AppMsgType.ATTACH.value,
+                        "type": consts.AppMsgType.ATTACH.value,
                         "appattach": {"totallen": total_len, "attachid": attach_id},
                     }
                 }
@@ -476,7 +420,11 @@ def send_app(title, total_len, attach_id, to_user_name):
 def send_emoticon(media_id, to_user_name):
     return post_msg(
         "/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys",
-        {"ToUserName": to_user_name, "Type": MsgType.EMOTICON, "MediaId": media_id},
+        {
+            "ToUserName": to_user_name,
+            "Type": consts.MsgType.EMOTICON,
+            "MediaId": media_id,
+        },
     )
 
 
@@ -547,7 +495,7 @@ def upload(path, to_user_name):
                 "TotalLen": total_len,
                 "StartPos": 0,
                 "DataLen": total_len,
-                "MediaType": MediaType.ATTACHMENT,
+                "MediaType": consts.MediaType.ATTACHMENT,
                 "FromUserName": user.user_name,
                 "ToUserName": to_user_name,
             }
@@ -604,14 +552,14 @@ def mod_remark_name(user_name, remark_name):
     oplog(
         {
             "UserName": user_name,
-            "CmdId": CmdId.MOD_REMARK_NAME,
+            "CmdId": consts.CmdId.MOD_REMARK_NAME,
             "RemarkName": remark_name,
         }
     )
 
 
 def set_top_contact(user_name, op):
-    oplog({"UserName": user_name, "CmdId": CmdId.TOP_CONTACT, "OP": op})
+    oplog({"UserName": user_name, "CmdId": consts.CmdId.TOP_CONTACT, "OP": op})
 
 
 def oplog(data):
