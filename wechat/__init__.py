@@ -185,7 +185,8 @@ def process_msgs(msgs):
     for msg in msgs:
         M = models.Msg(msg)
 
-        M.is_send = is_me(M.from_user_name)
+        M.sender = M.from_user_name
+        M.is_send = is_me(M.sender)
         M.peer_user_name = M.to_user_name if M.is_send else M.from_user_name
         M.is_room = is_room_contact(M.peer_user_name)
 
@@ -193,8 +194,7 @@ def process_msgs(msgs):
             if M.status_notify_code == consts.StatusNotifyCode.SYNC_CONV:
                 init_chats(M.status_notify_user_name)
         else:
-            M.sender = M.from_user_name
-            x = render(M.content)
+            x = utils.render(M.content)
 
             if M.is_room:
                 m = re.search("^(@[a-z0-9]*):\n(.*)", x)
@@ -293,13 +293,10 @@ def add_contact(contact):
     c.is_top = bool(c.contact_flag & consts.ContactFlag.TOP_CONTACT)
     c.has_photo_album = bool(c.sns_flag & 1)
 
-    c.display_name = render(c.remark_name or c.nick_name)
-
     if c.is_room:
-        if c.member_list:
+        if c.member_list and c.encry_chat_room_id:
             for m in c.member_list:
                 m.is_me = is_me(m.user_name)
-                m.display_name = render(m.display_name)
                 m.head_img_url = get_head_img_url(
                     m.user_name, chat_room_id=c.encry_chat_room_id
                 )
@@ -311,33 +308,6 @@ def del_contact(contact):
     user_name = contact["UserName"]
 
     del contacts[user_name]
-
-
-def render(s):
-    def repl(m):
-        code = m[1]
-
-        if is_keycap(code):
-            return hexchr(code[:2]) + "\ufe0f\u20e3"
-        if is_flag(code):
-            return hexchr(code[:5]) + hexchr(code[5:])
-
-        return hexchr(code)
-
-    s = s.replace("<br/>", "\n")
-    return re.sub('<span class="emoji emoji(.*?)"></span>', repl, s)
-
-
-def is_keycap(code):
-    return "2320e3" <= code.zfill(6) <= "3920e3"
-
-
-def is_flag(code):
-    return "1f1e6" * 2 <= code.zfill(10) <= "1f1ff" * 2
-
-
-def hexchr(x):
-    return chr(int(x, base=16))
 
 
 def get_head_img_url(user_name, chat_room_id=""):
