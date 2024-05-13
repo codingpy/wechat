@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "wechat"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fake-useragent = "^1.5.1"
+qrcode = "^7.4.2"
+requests-toolbelt = "^1.0.0"
+xmltodict = "^0.13.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+responses = "^0.25.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,4 +1,0 @@
-fake-useragent
-qrcode
-requests-toolbelt
-xmltodict
